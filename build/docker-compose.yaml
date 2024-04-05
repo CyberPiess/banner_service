@@ -1,0 +1,20 @@
+version: "3.8"
+name: banner_service
+services:
+  db:
+    image: postgres
+    container_name: local_pgsql
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - local_pgdata:/var/lib/postgres/data
+volumes:
+  local_pgdata:
+  pgadmin-data:
+    driver: local
