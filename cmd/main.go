@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	appUser "github.com/CyberPiess/banner_sevice/internal/application/user"
-	userService "github.com/CyberPiess/banner_sevice/internal/domain/user"
+	appBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
+	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
 
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
-	userStorage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/user"
+	bannerStorage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
 
 	"github.com/joho/godotenv"
 )
@@ -39,12 +39,12 @@ func main() {
 		log.Fatal("failed to initialize db: %s", err.Error())
 	}
 
-	userS := userStorage.NewUserRepository(db)
-	userService := userService.NewUserService(userS)
+	bannerStore := bannerStorage.NewBannerRepository(db)
+	bannerService := bannerService.NewBannerService(bannerStore)
 
-	userHandler := appUser.NewUserHandler(userService)
+	bannerHandler := appBanner.NewBannerHandler(bannerService)
 
-	mux.HandleFunc("/user_banner", userHandler.GetUserBanner)
+	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner)
 
 	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)
