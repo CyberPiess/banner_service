@@ -9,6 +9,7 @@ import (
 
 	appBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
 	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	"github.com/gorilla/mux"
 
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
 	bannerStorage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
@@ -26,7 +27,8 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
+	// mux := http.NewServeMux()
 
 	db, err := postgres.NewPostgresDb(postgres.Config{
 		Host:     os.Getenv("PG_HOST"),
@@ -46,7 +48,7 @@ func main() {
 
 	bannerHandler := appBanner.NewBannerHandler(bannerService)
 
-	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner)
+	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner).Methods(http.MethodGet)
 
 	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)

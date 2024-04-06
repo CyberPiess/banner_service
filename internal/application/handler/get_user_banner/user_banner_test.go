@@ -112,15 +112,6 @@ func TestGetUserBanner(t *testing.T) {
 			want: 400,
 		},
 		{
-			name: "Method POST",
-			args: args{w: httptest.NewRecorder(),
-				r: httptest.NewRequest(
-					http.MethodPost,
-					"http://localhost:8080/users", nil),
-				token: ""},
-			want: 400,
-		},
-		{
 			name: "If returned empty content",
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(

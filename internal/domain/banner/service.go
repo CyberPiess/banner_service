@@ -11,6 +11,7 @@ import (
 type bannerStorage interface {
 	Get(ctx context.Context, bannerRequest banner.BannerRequest) (banner.BannerResponse, error)
 	IfTokenValid(token string) (bool, error)
+	IfBannerExists(featureId int, tagId int) (bool, error)
 }
 type BannerService struct {
 	store bannerStorage
@@ -34,6 +35,14 @@ func (b *BannerService) SearchBanner(ctx context.Context, bannerFilter Filter, u
 		TagId:           bannerFilter.TagId,
 		FeatureId:       bannerFilter.FeatureId,
 		UseLastRevision: bannerFilter.UseLastRevision,
+	}
+
+	bannerExists, err := b.store.IfBannerExists(bannerRequest.TagId, bannerRequest.FeatureId)
+	if err != nil {
+		return BannerEntity{}, validToken, err
+	}
+	if !bannerExists {
+		return BannerEntity{}, validToken, nil
 	}
 
 	banner, err := b.store.Get(ctx, bannerRequest)

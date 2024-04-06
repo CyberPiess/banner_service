@@ -24,11 +24,6 @@ func NewBannerHandler(service bannerService) *Banner {
 
 func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodGet {
-		http.Error(w, "Некорректные данные", http.StatusBadRequest)
-		return
-	}
-
 	bannerFilter, err := b.createFilterFromRequest(r)
 	if err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
