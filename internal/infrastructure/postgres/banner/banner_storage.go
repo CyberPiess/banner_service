@@ -15,7 +15,7 @@ func NewBannerRepository(db *sql.DB) *BannerRepository {
 	return &BannerRepository{db: db}
 }
 
-func (ur *BannerRepository) Get(ctx context.Context, bannerParams BannerRequest) (BannerResponse, error) {
+func (bn *BannerRepository) Get(ctx context.Context, bannerParams BannerRequest) (BannerResponse, error) {
 	var banner BannerResponse
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -27,11 +27,29 @@ func (ur *BannerRepository) Get(ctx context.Context, bannerParams BannerRequest)
 		return BannerResponse{}, err
 	}
 
-	row := ur.db.QueryRow(query, args...)
+	row := bn.db.QueryRow(query, args...)
 	err = row.Scan(&banner.Content)
 	if err != nil {
 		return BannerResponse{}, err
 	}
 
 	return banner, nil
+}
+
+func (bn *BannerRepository) IfTokenValid(token string) (bool, error) {
+	var exists bool
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	query, args, err := psql.Select("token").
+		Prefix("SELECT EXISTS (").From("valid_tokens").
+		Where("token = ?", token).Suffix(")").ToSql()
+	if err != nil {
+		return false, err
+	}
+
+	row := bn.db.QueryRow(query, args...)
+	err = row.Scan(&exists)
+
+	return exists, err
+
 }

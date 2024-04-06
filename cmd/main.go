@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ func main() {
 
 	currentDir, _ := os.Getwd()
 	envFilePath := filepath.Join(currentDir, "..", "build\\.env")
+	fmt.Println(envFilePath)
 	err := godotenv.Load(envFilePath)
 	if err != nil {
 		log.Fatal("Error loading .env file")

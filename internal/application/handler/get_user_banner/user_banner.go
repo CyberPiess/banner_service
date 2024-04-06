@@ -9,14 +9,8 @@ import (
 	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
 )
 
-type ContextKey string
-
-const (
-	BannerContextKey ContextKey = "banner"
-)
-
 type bannerService interface {
-	SearchBanner(ctx context.Context, bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, error)
+	SearchBanner(ctx context.Context, bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error)
 }
 
 type Banner struct {
@@ -42,15 +36,19 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 
 	var bnnr banner.BannerEntity
 	ctx := context.WithValue(context.Background(), "banner", bnnr)
-	newBanner, err := b.service.SearchBanner(ctx, bannerFilter, user)
-	if err != nil {
+	newBanner, accessPermited, err := b.service.SearchBanner(ctx, bannerFilter, user)
+	switch {
+	case err != nil:
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
-	}
-
-	if newBanner.Content == nil {
-		http.Error(w, "Баннер не найден", 404)
+	case !accessPermited:
+		http.Error(w, "Пользователь не имеет доступа", http.StatusForbidden)
 		return
+	case newBanner.Content == nil:
+		http.Error(w, "Баннер не найден", http.StatusNotFound)
+		return
+	default:
+
 	}
 
 	jsonContent, err := b.createFromEntity(newBanner)
@@ -67,6 +65,7 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 func (b *Banner) createFilterFromRequest(r *http.Request) (banner.Filter, error) {
 	var bannerFilter banner.Filter
 	var err error
+
 	bannerFilter.TagId, err = strconv.Atoi(r.FormValue("tag_id"))
 	if err != nil {
 		return banner.Filter{}, err
@@ -77,7 +76,13 @@ func (b *Banner) createFilterFromRequest(r *http.Request) (banner.Filter, error)
 		return banner.Filter{}, err
 	}
 
-	bannerFilter.UseLastRevision, err = strconv.ParseBool(r.FormValue("use_last_revision"))
+	useLastRevision := r.FormValue("use_last_revision")
+	if useLastRevision == "" {
+		bannerFilter.UseLastRevision = false
+		return bannerFilter, nil
+	}
+
+	bannerFilter.UseLastRevision, err = strconv.ParseBool(useLastRevision)
 	if err != nil {
 		return banner.Filter{}, err
 	}
