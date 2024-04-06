@@ -5,7 +5,6 @@
 package mock_userbanner
 
 import (
-	context "context"
 	reflect "reflect"
 
 	banner "github.com/CyberPiess/banner_sevice/internal/domain/banner"
@@ -36,9 +35,9 @@ func (m *MockbannerService) EXPECT() *MockbannerServiceMockRecorder {
 }
 
 // SearchBanner mocks base method.
-func (m *MockbannerService) SearchBanner(ctx context.Context, bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error) {
+func (m *MockbannerService) SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchBanner", ctx, bannerFilter, user)
+	ret := m.ctrl.Call(m, "SearchBanner", bannerFilter, user)
 	ret0, _ := ret[0].(banner.BannerEntity)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -46,7 +45,7 @@ func (m *MockbannerService) SearchBanner(ctx context.Context, bannerFilter banne
 }
 
 // SearchBanner indicates an expected call of SearchBanner.
-func (mr *MockbannerServiceMockRecorder) SearchBanner(ctx, bannerFilter, user interface{}) *gomock.Call {
+func (mr *MockbannerServiceMockRecorder) SearchBanner(bannerFilter, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchBanner", reflect.TypeOf((*MockbannerService)(nil).SearchBanner), ctx, bannerFilter, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchBanner", reflect.TypeOf((*MockbannerService)(nil).SearchBanner), bannerFilter, user)
 }

@@ -1,7 +1,6 @@
 package banner
 
 import (
-	"context"
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
@@ -15,7 +14,7 @@ func NewBannerRepository(db *sql.DB) *BannerRepository {
 	return &BannerRepository{db: db}
 }
 
-func (bn *BannerRepository) Get(ctx context.Context, bannerParams BannerRequest) (BannerResponse, error) {
+func (bn *BannerRepository) Get(bannerParams BannerRequest) (BannerResponse, error) {
 	var banner BannerResponse
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)

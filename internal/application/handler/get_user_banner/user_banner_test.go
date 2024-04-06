@@ -26,19 +26,29 @@ func TestGetUserBanner(t *testing.T) {
 
 	bannerHandler := NewBannerHandler(mockBannerService)
 
-	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
 		Return(banner.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
 			true, nil).Times(2)
 
-	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{}, true, nil)
+	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
+		Return(banner.BannerEntity{}, true, fmt.Errorf("unauthorized user"))
 
-	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
 		Return(banner.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
+			true,
+			fmt.Errorf("wrong data supplied")).Times(4)
+
+	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
+		Return(banner.BannerEntity{},
+			true,
+			nil)
+
+	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
+		Return(banner.BannerEntity{},
 			false,
 			nil)
 
-	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any(), gomock.Any()).
+	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
 		Return(banner.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
 			true,
 			fmt.Errorf("some error from db"))

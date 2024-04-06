@@ -40,7 +40,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal("failed to initialize db: %s", err.Error())
+		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
 
 	bannerStore := bannerStorage.NewBannerRepository(db)
