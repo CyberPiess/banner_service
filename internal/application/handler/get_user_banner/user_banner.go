@@ -1,4 +1,5 @@
-package user
+//go:generate mockgen -source=user_banner.go -destination=mocks/mock.go
+package userbanner
 
 import (
 	"context"
@@ -22,6 +23,12 @@ func NewBannerHandler(service bannerService) *Banner {
 }
 
 func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Некорректные данные", http.StatusBadRequest)
+		return
+	}
+
 	bannerFilter, err := b.createFilterFromRequest(r)
 	if err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
@@ -48,7 +55,6 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Баннер не найден", http.StatusNotFound)
 		return
 	default:
-
 	}
 
 	jsonContent, err := b.createFromEntity(newBanner)
