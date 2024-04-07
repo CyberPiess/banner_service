@@ -9,9 +9,11 @@ import (
 )
 
 type bannerStorage interface {
-	Get(bannerRequest banner.BannerRequest) (banner.BannerResponse, error)
+	Get(bannerRequest banner.BannerRequest) ([]banner.BannerResponse, error)
 	IfTokenValid(token string) (bool, error)
 	IfBannerExists(featureId int, tagId int) (bool, error)
+	IfAdminTokenValid(token string) (bool, error)
+	GetAllBanners(bannerParams banner.BannerRequest) ([]banner.BannerResponse, error)
 }
 type BannerService struct {
 	store bannerStorage
@@ -25,6 +27,7 @@ func (b *BannerService) SearchBanner(bannerFilter Filter, user User) (BannerEnti
 	if !b.ifTokenSupplied(user) {
 		return BannerEntity{}, false, fmt.Errorf("unauthorized user")
 	}
+
 	validToken, err := b.store.IfTokenValid(user.Token)
 	if err != nil {
 		return BannerEntity{}, validToken, err
@@ -35,6 +38,8 @@ func (b *BannerService) SearchBanner(bannerFilter Filter, user User) (BannerEnti
 
 	bannerRequest, err := b.verifyData(bannerFilter)
 	if err != nil {
+		return BannerEntity{}, validToken, fmt.Errorf("wrong data supplied")
+	} else if bannerRequest.TagId == 0 || bannerRequest.FeatureId == 0 {
 		return BannerEntity{}, validToken, fmt.Errorf("wrong data supplied")
 	}
 
@@ -56,32 +61,94 @@ func (b *BannerService) SearchBanner(bannerFilter Filter, user User) (BannerEnti
 		return BannerEntity{}, validToken, err
 	}
 
-	return bannerEntity, validToken, nil
+	return bannerEntity[0], validToken, nil
 }
 
-func (b *BannerService) createBannerEntity(banner banner.BannerResponse) (BannerEntity, error) {
-
-	var bannerEntity BannerEntity
-	err := json.Unmarshal([]byte(banner.Content), &bannerEntity.Content)
-	if err != nil {
-		return bannerEntity, fmt.Errorf("500")
+func (b *BannerService) SearchAllBanners(bannerFilter Filter, user User) ([]BannerEntity, bool, error) {
+	if !b.ifTokenSupplied(user) {
+		return []BannerEntity{}, false, fmt.Errorf("unauthorized user")
 	}
 
-	return bannerEntity, nil
+	validToken, err := b.store.IfAdminTokenValid(user.Token)
+	if err != nil {
+		return []BannerEntity{}, validToken, err
+	}
+	if !validToken {
+		return []BannerEntity{}, validToken, nil
+	}
+
+	bannerRequest, err := b.verifyData(bannerFilter)
+	if err != nil {
+		return []BannerEntity{}, validToken, fmt.Errorf("wrong data supplied")
+	}
+
+	banner, err := b.store.GetAllBanners(bannerRequest)
+	if err != nil {
+		return []BannerEntity{}, validToken, err
+	}
+
+	resultBanners, err := b.createBannerEntity(banner)
+	if err != nil {
+		return []BannerEntity{}, validToken, err
+	}
+
+	return resultBanners, validToken, nil
+}
+
+func (b *BannerService) createBannerEntity(bannerList []banner.BannerResponse) ([]BannerEntity, error) {
+
+	var bannerEntityList []BannerEntity
+	for _, b := range bannerList {
+		bannerEntity := BannerEntity{
+			ID:        b.ID,
+			TagId:     b.TagId,
+			FeatureId: b.FeatureId,
+			IsActive:  b.IsActive,
+			CreatedAt: b.CreatedAt,
+			UpdatedAt: b.UpdatedAt,
+		}
+		err := json.Unmarshal([]byte(b.Content), &bannerEntity.Content)
+
+		if err != nil {
+			return bannerEntityList, fmt.Errorf("500")
+		}
+		bannerEntityList = append(bannerEntityList, bannerEntity)
+
+	}
+
+	return bannerEntityList, nil
 }
 
 func (b *BannerService) verifyData(bannerFilter Filter) (banner.BannerRequest, error) {
 	var bannerRequest banner.BannerRequest
 	var err error
 
-	bannerRequest.TagId, err = strconv.Atoi(bannerFilter.TagId)
-	if err != nil {
-		return banner.BannerRequest{}, err
+	if bannerFilter.TagId != "" {
+		bannerRequest.TagId, err = strconv.Atoi(bannerFilter.TagId)
+		if err != nil {
+			return banner.BannerRequest{}, err
+		}
 	}
 
-	bannerRequest.FeatureId, err = strconv.Atoi(bannerFilter.FeatureId)
-	if err != nil {
-		return banner.BannerRequest{}, err
+	if bannerFilter.FeatureId != "" {
+		bannerRequest.FeatureId, err = strconv.Atoi(bannerFilter.FeatureId)
+		if err != nil {
+			return banner.BannerRequest{}, err
+		}
+	}
+
+	if bannerFilter.Limit != "" {
+		bannerRequest.Limit, err = strconv.Atoi(bannerFilter.Limit)
+		if err != nil {
+			return banner.BannerRequest{}, err
+		}
+	}
+
+	if bannerFilter.Offset != "" {
+		bannerRequest.Offset, err = strconv.Atoi(bannerFilter.Offset)
+		if err != nil {
+			return banner.BannerRequest{}, err
+		}
 	}
 
 	if bannerFilter.UseLastRevision == "" {
@@ -93,9 +160,7 @@ func (b *BannerService) verifyData(bannerFilter Filter) (banner.BannerRequest, e
 	if err != nil {
 		return banner.BannerRequest{}, err
 	}
-
 	return bannerRequest, nil
-
 }
 
 func (b *BannerService) ifTokenSupplied(user User) bool {

@@ -1,5 +1,13 @@
 package banner
 
+import "time"
+
 type BannerEntity struct {
-	Content map[string]interface{}
+	ID        int
+	Content   map[string]interface{}
+	TagId     []int
+	FeatureId int
+	IsActive  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

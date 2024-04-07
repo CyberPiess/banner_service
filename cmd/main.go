@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	appBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
+	adminBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner"
+	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
+
 	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/gorilla/mux"
 
@@ -46,9 +48,11 @@ func main() {
 	bannerStore := bannerStorage.NewBannerRepository(db)
 	bannerService := bannerService.NewBannerService(bannerStore)
 
-	bannerHandler := appBanner.NewBannerHandler(bannerService)
+	bannerHandler := userBanner.NewBannerHandler(bannerService)
+	adminBannerHandler := adminBanner.NewBannerHandler(bannerService)
 
 	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner).Methods(http.MethodGet)
+	mux.HandleFunc("/banner", adminBannerHandler.GetAllBanners).Methods(http.MethodGet)
 
 	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)
