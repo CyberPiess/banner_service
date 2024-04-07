@@ -39,15 +39,29 @@ func (bn *BannerRepository) Get(bannerParams BannerRequest) ([]BannerResponse, e
 func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerResponse, error) {
 
 	var bannerResultSlice []BannerResponse
-	var resultQuery string
+	var bannersQuery string
 	var args []interface{}
 	var err error
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	if bannerParams.FeatureId != 0 || bannerParams.TagId != 0 {
-		query := bn.queryFromParams(bannerParams)
-		resultQuery, args, err = query.ToSql()
+		var searchBannersID sq.SelectBuilder
+		psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+		if bannerParams.FeatureId != 0 && bannerParams.TagId == 0 {
+			searchBannersID = psql.Select("banner_id").
+				From("features").Where("feature_id = ?", bannerParams.FeatureId)
+		} else if bannerParams.FeatureId == 0 && bannerParams.TagId != 0 {
+			searchBannersID = psql.Select("banner_id").
+				From("tags").Where("tag_id = ?", bannerParams.FeatureId)
+		} else {
+			searchBannersID = psql.Select("ID").
+				From("banners as b").
+				Join("tags as t on b.id = t.banner_id").Join("features as f on b.id = f.banner_id").
+				Where("feature_id = ? and tag_id = ? and is_active = true", bannerParams.FeatureId, bannerParams.TagId)
+		}
+		bannersQuery, args, err = searchBannersID.ToSql()
 	}
 	if err != nil {
 		return bannerResultSlice, err
@@ -55,37 +69,38 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 
 	var bannerID int
 	var bannerIDSlice []int
-	rows, err := bn.db.Query(resultQuery, args...)
+	foundID, err := bn.db.Query(bannersQuery, args...)
 	if err != nil {
 		return bannerResultSlice, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&bannerID)
+	defer foundID.Close()
+	for foundID.Next() {
+		foundID.Scan(&bannerID)
 		bannerIDSlice = append(bannerIDSlice, bannerID)
 	}
 
-	query := psql.Select("id, content, is_active, create_time, update_time, feature_id").
+	selectAllBanners := psql.Select("id, content, is_active, create_time, update_time, feature_id").
 		From("banners as b").
 		Join("features as f on b.ID = f.banner_id")
 	if len(bannerIDSlice) > 0 {
-		query = query.Where(sq.Eq{"id": bannerIDSlice})
+		selectAllBanners = selectAllBanners.Where(sq.Eq{"id": bannerIDSlice})
 	}
 	if bannerParams.Limit != 0 {
-		query = query.Limit(uint64(bannerParams.Limit))
+		selectAllBanners = selectAllBanners.Limit(uint64(bannerParams.Limit))
 	}
 	if bannerParams.Offset != 0 {
-		query = query.Offset(uint64(bannerParams.Offset))
+		selectAllBanners = selectAllBanners.Offset(uint64(bannerParams.Offset))
 	}
 
-	finalQuery, args, err := query.ToSql()
+	fetchAllBannersQuery, args, err := selectAllBanners.ToSql()
 	if err != nil {
 		return bannerResultSlice, err
 	}
-	bannerRows, err := bn.db.Query(finalQuery, args...)
+	bannerRows, err := bn.db.Query(fetchAllBannersQuery, args...)
 	if err != nil {
 		return bannerResultSlice, err
 	}
+	defer bannerRows.Close()
 	for bannerRows.Next() {
 		var banner BannerResponse
 		err = bannerRows.Scan(&banner.ID, &banner.Content, &banner.IsActive,
@@ -102,6 +117,7 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 		if err != nil {
 			return []BannerResponse{}, err
 		}
+		defer tagsRows.Close()
 		var tagID int
 		var tags []int
 		for tagsRows.Next() {
@@ -166,26 +182,4 @@ func (bn *BannerRepository) IfBannerExists(tagId int, featureId int) (bool, erro
 	row := bn.db.QueryRow(query, args...)
 	err = row.Scan(&exists)
 	return exists, err
-}
-
-func (bn *BannerRepository) queryFromParams(bannerParams BannerRequest) sq.SelectBuilder {
-	var query sq.SelectBuilder
-	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-
-	if bannerParams.FeatureId != 0 && bannerParams.TagId == 0 {
-		query = psql.Select("banner_id").
-			From("features").Where("feature_id = ?", bannerParams.FeatureId)
-		return query
-	} else if bannerParams.FeatureId == 0 && bannerParams.TagId != 0 {
-		query = psql.Select("banner_id").
-			From("tags").Where("tag_id = ?", bannerParams.FeatureId)
-		return query
-	} else {
-		query = psql.Select("ID").
-			From("banners as b").
-			Join("tags as t on b.id = t.banner_id").Join("features as f on b.id = f.banner_id").
-			Where("feature_id = ? and tag_id = ? and is_active = true", bannerParams.FeatureId, bannerParams.TagId)
-	}
-
-	return query
 }
