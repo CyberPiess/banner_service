@@ -14,8 +14,10 @@ type bannerStorage interface {
 	IfTokenValid(token string) (bool, error)
 	IfBannerExists(featureId int, tagId int) (bool, error)
 	IfAdminTokenValid(token string) (bool, error)
+	SearchBannerByID(bannerID int) (bool, error)
 	GetAllBanners(bannerParams banner.BannerRequest) ([]banner.BannerResponse, error)
 	PostBanner(postBannerParams banner.BannerPostRequest) (int64, error)
+	PutBanner(putBannerParams banner.BannerPostRequest) error
 }
 type BannerService struct {
 	store bannerStorage
@@ -101,17 +103,17 @@ func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int64
 	if !b.ifTokenSupplied(user) {
 		return 0, false, fmt.Errorf("unauthorized user")
 	}
-	validToken, err := b.store.IfAdminTokenValid(user.Token)
+	accessPermited, err := b.store.IfAdminTokenValid(user.Token)
 	if err != nil {
-		return 0, validToken, err
+		return 0, accessPermited, err
 	}
-	if !validToken {
-		return 0, validToken, nil
+	if !accessPermited {
+		return 0, accessPermited, nil
 	}
 
 	someString, err := json.Marshal(newPostBanner.Content)
 	if err != nil {
-		return 0, validToken, err
+		return 0, accessPermited, err
 	}
 	postBanner := banner.BannerPostRequest{
 		TagIds:    newPostBanner.TagId,
@@ -124,9 +126,47 @@ func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int64
 
 	createdID, err := b.store.PostBanner(postBanner)
 	if err != nil {
-		return 0, validToken, err
+		return 0, accessPermited, err
 	}
-	return createdID, validToken, nil
+	return createdID, accessPermited, nil
+}
+
+func (b *BannerService) PutBanner(newPutBanner BannerEntity, user User) (bool, bool, error) {
+	if !b.ifTokenSupplied(user) {
+		return false, false, fmt.Errorf("unauthorized user")
+	}
+
+	accessPermited, err := b.store.IfAdminTokenValid(user.Token)
+	if err != nil {
+		return false, accessPermited, err
+	}
+	if !accessPermited {
+		return false, accessPermited, nil
+	}
+
+	bannerExists, err := b.store.SearchBannerByID(newPutBanner.ID)
+	if err != nil {
+		return false, accessPermited, err
+	}
+	if !bannerExists {
+		return bannerExists, accessPermited, nil
+	}
+
+	someString, err := json.Marshal(newPutBanner.Content)
+	if err != nil {
+		return bannerExists, accessPermited, nil
+	}
+	putBanner := banner.BannerPostRequest{
+		TagIds:    newPutBanner.TagId,
+		FeatureId: newPutBanner.FeatureId,
+		Content:   string(someString[:]),
+		IsActive:  newPutBanner.IsActive,
+		ID:        newPutBanner.ID,
+	}
+
+	err = b.store.PutBanner(putBanner)
+
+	return bannerExists, accessPermited, err
 }
 
 func (b *BannerService) createBannerEntity(bannerList []banner.BannerResponse) ([]BannerEntity, error) {

@@ -21,6 +21,7 @@ type BannerResponse struct {
 }
 
 type BannerPostRequest struct {
+	ID        int
 	TagIds    []int
 	FeatureId int
 	Content   string

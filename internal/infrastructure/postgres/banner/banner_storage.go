@@ -2,6 +2,7 @@ package banner
 
 import (
 	"database/sql"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -133,34 +134,74 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 
 func (bn *BannerRepository) PostBanner(postBannerParams BannerPostRequest) (int64, error) {
 	var createdID int64
+	tx, err := bn.db.Begin()
+
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
 
 	insertBannerQuery := sq.Insert("banners").
 		Columns("content", "is_active", "create_time").
 		Values(postBannerParams.Content,
 			postBannerParams.IsActive,
-			postBannerParams.CreatedAt).Suffix("returning id").RunWith(bn.db).
+			postBannerParams.CreatedAt).Suffix("returning id").RunWith(tx).
 		PlaceholderFormat(sq.Dollar)
 
-	err := insertBannerQuery.QueryRow().Scan(&createdID)
-	if err != nil {
-		return createdID, err
-	}
+	err = insertBannerQuery.QueryRow().Scan(&createdID)
+
 	_, err = sq.Insert("features").
 		Columns("feature_id", "banner_id").
-		Values(postBannerParams.FeatureId, createdID).RunWith(bn.db).PlaceholderFormat(sq.Dollar).Exec()
-	if err != nil {
-		return createdID, err
-	}
+		Values(postBannerParams.FeatureId, createdID).RunWith(tx).PlaceholderFormat(sq.Dollar).Exec()
 	for _, tagID := range postBannerParams.TagIds {
 		_, err = sq.Insert("tags").
 			Columns("tag_id", "banner_id").
-			Values(tagID, createdID).RunWith(bn.db).PlaceholderFormat(sq.Dollar).Exec()
-		if err != nil {
-			return createdID, err
-		}
+			Values(tagID, createdID).RunWith(tx).PlaceholderFormat(sq.Dollar).Exec()
 	}
 
-	return createdID, nil
+	return createdID, err
+}
+
+func (bn *BannerRepository) PutBanner(putBannerParams BannerPostRequest) error {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	tx, err := bn.db.Begin()
+
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	updateBannerContent := psql.Update("banners").Where("ID = ?", putBannerParams.ID).
+		Set("update_time", time.Now()).Set("is_active", putBannerParams.IsActive).RunWith(tx)
+	_, err = updateBannerContent.Exec()
+
+	deleteTags := psql.Delete("tags").Where("banner_id = ?", putBannerParams.ID).RunWith(tx)
+	_, err = deleteTags.Exec()
+
+	for _, tagID := range putBannerParams.TagIds {
+		_, err = sq.Insert("tags").
+			Columns("tag_id", "banner_id").
+			Values(tagID, putBannerParams.ID).RunWith(tx).PlaceholderFormat(sq.Dollar).Exec()
+	}
+
+	updateFeatureID := psql.Update("features").Where("banner_id = ?", putBannerParams.ID).
+		Set("feature_id", putBannerParams.FeatureId).RunWith(tx)
+	_, err = updateFeatureID.Exec()
+
+	return err
 }
 
 func (bn *BannerRepository) IfTokenValid(token string) (bool, error) {
@@ -173,7 +214,6 @@ func (bn *BannerRepository) IfTokenValid(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	row := bn.db.QueryRow(query, args...)
 	err = row.Scan(&exists)
 
@@ -208,6 +248,22 @@ func (bn *BannerRepository) IfBannerExists(tagId int, featureId int) (bool, erro
 		From("banners as b").
 		Join("tags as t on b.id = t.banner_id").Join("features as f on b.id = f.banner_id").
 		Where("feature_id = ? and tag_id = ? and is_active = true", featureId, tagId).Suffix(")").ToSql()
+	if err != nil {
+		return false, err
+	}
+	row := bn.db.QueryRow(query, args...)
+	err = row.Scan(&exists)
+	return exists, err
+}
+
+func (bn *BannerRepository) SearchBannerByID(bannerID int) (bool, error) {
+	var exists bool
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	query, args, err := psql.Select("id").
+		Prefix("SELECT EXISTS (").
+		From("banners as b").
+		Where("id = ?", bannerID).Suffix(")").ToSql()
 	if err != nil {
 		return false, err
 	}

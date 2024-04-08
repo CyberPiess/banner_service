@@ -10,6 +10,7 @@ import (
 	adminBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner"
 	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
 	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/post_banner"
+	putBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/put_banner"
 
 	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/gorilla/mux"
@@ -40,6 +41,7 @@ func main() {
 		SSLMode:  os.Getenv("SSLMODE"),
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 	})
+	defer db.Close()
 
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
@@ -51,10 +53,12 @@ func main() {
 	bannerHandler := userBanner.NewBannerHandler(bannerService)
 	adminBannerHandler := adminBanner.NewBannerHandler(bannerService)
 	postBannerHandler := postBanner.NewPostBannerHandler(bannerService)
+	putBannerHandler := putBanner.NewPutBannerHandler(bannerService)
 
 	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", adminBannerHandler.GetAllBanners).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", postBannerHandler.PostBanner).Methods(http.MethodPost)
+	mux.HandleFunc("/banner/{id}", putBannerHandler.PutBanner).Methods(http.MethodPut)
 
 	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)

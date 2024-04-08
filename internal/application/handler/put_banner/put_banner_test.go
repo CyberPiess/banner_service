@@ -1,4 +1,4 @@
-package postbanner
+package putbanner
 
 import (
 	"fmt"
@@ -7,8 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/post_banner/mocks"
+	putBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/put_banner/mocks"
 	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,19 +19,18 @@ type args struct {
 	token string
 }
 
-func TestPostBanner(t *testing.T) {
-
+func TestPutBanner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockBannerService := postBanner.NewMockpostBannerService(ctrl)
+	mockBannerService := putBanner.NewMockputBannerService(ctrl)
+	putBannerHandler := NewPutBannerHandler(mockBannerService)
 
-	postBannerHandler := NewPostBannerHandler(mockBannerService)
-
-	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(1, true, nil)
-	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, fmt.Errorf("unauthorized user"))
-	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, nil)
-	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, fmt.Errorf("some error"))
+	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(true, true, nil)
+	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, false, fmt.Errorf("unauthorized user"))
+	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, false, nil)
+	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, true, nil)
+	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(true, true, fmt.Errorf("some inner error"))
 
 	objectToSerializeToJSON := "{ \"tag_ids\": [1,2,3], \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
 
@@ -38,6 +38,7 @@ func TestPostBanner(t *testing.T) {
 	validBody2 := strings.NewReader(objectToSerializeToJSON)
 	validBody3 := strings.NewReader(objectToSerializeToJSON)
 	validBody4 := strings.NewReader(objectToSerializeToJSON)
+	validBody5 := strings.NewReader(objectToSerializeToJSON)
 
 	test := []struct {
 		name string
@@ -45,14 +46,14 @@ func TestPostBanner(t *testing.T) {
 		want int
 	}{
 		{
-			name: "Correct data",
+			name: "Coorect data",
 			args: args{
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
-					http.MethodPost,
-					"http://localhost:8080/banner", validBody),
+					http.MethodPut,
+					"http://localhost:8080/banner/{id}", validBody),
 				token: "some_token"},
-			want: 201,
+			want: 200,
 		},
 		{
 			name: "Empty body",
@@ -60,7 +61,7 @@ func TestPostBanner(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodPost,
-					"http://localhost:8080/banner", nil),
+					"http://localhost:8080/banner/{id}", nil),
 				token: "some_token"},
 			want: 400,
 		},
@@ -70,7 +71,7 @@ func TestPostBanner(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodPost,
-					"http://localhost:8080/banner", validBody2),
+					"http://localhost:8080/banner/{id}", validBody2),
 				token: ""},
 			want: 401,
 		},
@@ -80,9 +81,19 @@ func TestPostBanner(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodPost,
-					"http://localhost:8080/banner", validBody3),
+					"http://localhost:8080/banner/{id}", validBody3),
 				token: "some_token"},
 			want: 403,
+		},
+		{
+			name: "Banner not found",
+			args: args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest(
+					http.MethodPost,
+					"http://localhost:8080/banner/{id}", validBody4),
+				token: "some_token"},
+			want: 404,
 		},
 		{
 			name: "Inner error",
@@ -90,19 +101,19 @@ func TestPostBanner(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodPost,
-					"http://localhost:8080/banner", validBody4),
+					"http://localhost:8080/banner/{id}", validBody5),
 				token: "some_token"},
 			want: 500,
 		},
 	}
 
 	for _, tt := range test {
-		req := tt.args.r
 		w := tt.args.w
+		req := tt.args.r
+		req = mux.SetURLVars(req, map[string]string{"id": "1"})
 
 		req.Header.Set("token", tt.args.token)
-		postBannerHandler.PostBanner(w, req)
+		putBannerHandler.PutBanner(w, req)
 		assert.Equal(t, tt.want, w.Code)
 	}
-
 }
