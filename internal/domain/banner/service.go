@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
 )
@@ -14,6 +15,7 @@ type bannerStorage interface {
 	IfBannerExists(featureId int, tagId int) (bool, error)
 	IfAdminTokenValid(token string) (bool, error)
 	GetAllBanners(bannerParams banner.BannerRequest) ([]banner.BannerResponse, error)
+	PostBanner(postBannerParams banner.BannerPostRequest) (int64, error)
 }
 type BannerService struct {
 	store bannerStorage
@@ -93,6 +95,38 @@ func (b *BannerService) SearchAllBanners(bannerFilter Filter, user User) ([]Bann
 	}
 
 	return resultBanners, validToken, nil
+}
+
+func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int64, bool, error) {
+	if !b.ifTokenSupplied(user) {
+		return 0, false, fmt.Errorf("unauthorized user")
+	}
+	validToken, err := b.store.IfAdminTokenValid(user.Token)
+	if err != nil {
+		return 0, validToken, err
+	}
+	if !validToken {
+		return 0, validToken, nil
+	}
+
+	someString, err := json.Marshal(newPostBanner.Content)
+	if err != nil {
+		return 0, validToken, err
+	}
+	postBanner := banner.BannerPostRequest{
+		TagIds:    newPostBanner.TagId,
+		FeatureId: newPostBanner.FeatureId,
+		Content:   string(someString[:]),
+		IsActive:  newPostBanner.IsActive,
+		CreatedAt: time.Now(),
+		UpdatedAt: newPostBanner.UpdatedAt,
+	}
+
+	createdID, err := b.store.PostBanner(postBanner)
+	if err != nil {
+		return 0, validToken, err
+	}
+	return createdID, validToken, nil
 }
 
 func (b *BannerService) createBannerEntity(bannerList []banner.BannerResponse) ([]BannerEntity, error) {

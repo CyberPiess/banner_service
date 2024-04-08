@@ -131,6 +131,38 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 	return bannerResultSlice, nil
 }
 
+func (bn *BannerRepository) PostBanner(postBannerParams BannerPostRequest) (int64, error) {
+	var createdID int64
+
+	insertBannerQuery := sq.Insert("banners").
+		Columns("content", "is_active", "create_time").
+		Values(postBannerParams.Content,
+			postBannerParams.IsActive,
+			postBannerParams.CreatedAt).Suffix("returning id").RunWith(bn.db).
+		PlaceholderFormat(sq.Dollar)
+
+	err := insertBannerQuery.QueryRow().Scan(&createdID)
+	if err != nil {
+		return createdID, err
+	}
+	_, err = sq.Insert("features").
+		Columns("feature_id", "banner_id").
+		Values(postBannerParams.FeatureId, createdID).RunWith(bn.db).PlaceholderFormat(sq.Dollar).Exec()
+	if err != nil {
+		return createdID, err
+	}
+	for _, tagID := range postBannerParams.TagIds {
+		_, err = sq.Insert("tags").
+			Columns("tag_id", "banner_id").
+			Values(tagID, createdID).RunWith(bn.db).PlaceholderFormat(sq.Dollar).Exec()
+		if err != nil {
+			return createdID, err
+		}
+	}
+
+	return createdID, nil
+}
+
 func (bn *BannerRepository) IfTokenValid(token string) (bool, error) {
 	var exists bool
 

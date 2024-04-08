@@ -9,6 +9,7 @@ import (
 
 	adminBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner"
 	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
+	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/post_banner"
 
 	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/gorilla/mux"
@@ -30,7 +31,6 @@ func main() {
 	}
 
 	mux := mux.NewRouter()
-	// mux := http.NewServeMux()
 
 	db, err := postgres.NewPostgresDb(postgres.Config{
 		Host:     os.Getenv("PG_HOST"),
@@ -50,9 +50,11 @@ func main() {
 
 	bannerHandler := userBanner.NewBannerHandler(bannerService)
 	adminBannerHandler := adminBanner.NewBannerHandler(bannerService)
+	postBannerHandler := postBanner.NewPostBannerHandler(bannerService)
 
 	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", adminBannerHandler.GetAllBanners).Methods(http.MethodGet)
+	mux.HandleFunc("/banner", postBannerHandler.PostBanner).Methods(http.MethodPost)
 
 	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)

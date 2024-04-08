@@ -10,6 +10,8 @@ import (
 
 type bannerService interface {
 	SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error)
+	SearchAllBanners(bannerFilter banner.Filter, user banner.User) ([]banner.BannerEntity, bool, error)
+	PostBanner(newBanner banner.BannerEntity, user banner.User) (int64, bool, error)
 }
 
 type Banner struct {

@@ -12,6 +12,7 @@ import (
 type bannerService interface {
 	SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error)
 	SearchAllBanners(bannerFilter banner.Filter, user banner.User) ([]banner.BannerEntity, bool, error)
+	PostBanner(newBanner banner.BannerEntity, user banner.User) (int64, bool, error)
 }
 
 type Banner struct {
@@ -63,13 +64,13 @@ func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 
 func (b *Banner) createFromEntity(entityList []banner.BannerEntity) ([]byte, error) {
 	type response struct {
-		ID        int
-		Content   map[string]interface{}
-		TagId     []int
-		FeatureId int
-		IsActive  bool
-		CreatedAt time.Time
-		UpdatedAt time.Time
+		ID        int                    `json:"banner_id"`
+		TagId     []int                  `json:"tag_ids"`
+		FeatureId int                    `json:"feature_id"`
+		Content   map[string]interface{} `json:"content"`
+		IsActive  bool                   `json:"is_active"`
+		CreatedAt time.Time              `json:"created_at"`
+		UpdatedAt time.Time              `json:"updated_at"`
 	}
 
 	var result []response
