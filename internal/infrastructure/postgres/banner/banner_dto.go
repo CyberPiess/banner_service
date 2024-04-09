@@ -20,12 +20,13 @@ type BannerResponse struct {
 	FeatureId int       `db:"feature_id"`
 }
 
-type BannerPostRequest struct {
-	ID        int
-	TagIds    []int
-	FeatureId int
-	Content   string
-	IsActive  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type BannerPutPostRequest struct {
+	ID                int
+	TagIds            []int
+	FeatureId         int
+	Content           string
+	IsActive          bool
+	IfFlagActiveIsSet bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }

@@ -28,7 +28,6 @@ func TestPostBanner(t *testing.T) {
 	postBannerHandler := NewPostBannerHandler(mockBannerService)
 
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(1, true, nil)
-	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, fmt.Errorf("unauthorized user"))
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, nil)
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, fmt.Errorf("some error"))
 

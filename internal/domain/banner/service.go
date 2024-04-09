@@ -3,7 +3,6 @@ package banner
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
@@ -16,8 +15,9 @@ type bannerStorage interface {
 	IfAdminTokenValid(token string) (bool, error)
 	SearchBannerByID(bannerID int) (bool, error)
 	GetAllBanners(bannerParams banner.BannerRequest) ([]banner.BannerResponse, error)
-	PostBanner(postBannerParams banner.BannerPostRequest) (int64, error)
-	PutBanner(putBannerParams banner.BannerPostRequest) error
+	PostBanner(postBannerParams banner.BannerPutPostRequest) (int, error)
+	PutBanner(putBannerParams banner.BannerPutPostRequest) error
+	DeleteBanner(deleteBannerParams banner.BannerPutPostRequest) error
 }
 type BannerService struct {
 	store bannerStorage
@@ -27,11 +27,7 @@ func NewBannerService(storage bannerStorage) *BannerService {
 	return &BannerService{store: storage}
 }
 
-func (b *BannerService) SearchBanner(bannerFilter Filter, user User) (BannerEntity, bool, error) {
-	if !b.ifTokenSupplied(user) {
-		return BannerEntity{}, false, fmt.Errorf("unauthorized user")
-	}
-
+func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerEntity, bool, error) {
 	validToken, err := b.store.IfTokenValid(user.Token)
 	if err != nil {
 		return BannerEntity{}, validToken, err
@@ -40,19 +36,18 @@ func (b *BannerService) SearchBanner(bannerFilter Filter, user User) (BannerEnti
 		return BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest, err := b.verifyData(bannerFilter)
-	if err != nil {
-		return BannerEntity{}, validToken, fmt.Errorf("wrong data supplied")
-	} else if bannerRequest.TagId == 0 || bannerRequest.FeatureId == 0 {
-		return BannerEntity{}, validToken, fmt.Errorf("wrong data supplied")
-	}
-
-	bannerExists, err := b.store.IfBannerExists(bannerRequest.TagId, bannerRequest.FeatureId)
+	bannerExists, err := b.store.IfBannerExists(bannerFilter.TagId, bannerFilter.FeatureId)
 	if err != nil {
 		return BannerEntity{}, validToken, err
 	}
 	if !bannerExists {
 		return BannerEntity{}, validToken, nil
+	}
+
+	bannerRequest := banner.BannerRequest{
+		TagId:           bannerFilter.TagId,
+		FeatureId:       bannerFilter.FeatureId,
+		UseLastRevision: bannerFilter.UseLastRevision,
 	}
 
 	banner, err := b.store.Get(bannerRequest)
@@ -68,11 +63,7 @@ func (b *BannerService) SearchBanner(bannerFilter Filter, user User) (BannerEnti
 	return bannerEntity[0], validToken, nil
 }
 
-func (b *BannerService) SearchAllBanners(bannerFilter Filter, user User) ([]BannerEntity, bool, error) {
-	if !b.ifTokenSupplied(user) {
-		return []BannerEntity{}, false, fmt.Errorf("unauthorized user")
-	}
-
+func (b *BannerService) SearchAllBanners(bannerFilter GetAllFilter, user User) ([]BannerEntity, bool, error) {
 	validToken, err := b.store.IfAdminTokenValid(user.Token)
 	if err != nil {
 		return []BannerEntity{}, validToken, err
@@ -81,9 +72,11 @@ func (b *BannerService) SearchAllBanners(bannerFilter Filter, user User) ([]Bann
 		return []BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest, err := b.verifyData(bannerFilter)
-	if err != nil {
-		return []BannerEntity{}, validToken, fmt.Errorf("wrong data supplied")
+	bannerRequest := banner.BannerRequest{
+		TagId:     bannerFilter.TagId,
+		FeatureId: bannerFilter.FeatureId,
+		Limit:     bannerFilter.Limit,
+		Offset:    bannerFilter.Offset,
 	}
 
 	banner, err := b.store.GetAllBanners(bannerRequest)
@@ -99,10 +92,7 @@ func (b *BannerService) SearchAllBanners(bannerFilter Filter, user User) ([]Bann
 	return resultBanners, validToken, nil
 }
 
-func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int64, bool, error) {
-	if !b.ifTokenSupplied(user) {
-		return 0, false, fmt.Errorf("unauthorized user")
-	}
+func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int, bool, error) {
 	accessPermited, err := b.store.IfAdminTokenValid(user.Token)
 	if err != nil {
 		return 0, accessPermited, err
@@ -115,11 +105,11 @@ func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int64
 	if err != nil {
 		return 0, accessPermited, err
 	}
-	postBanner := banner.BannerPostRequest{
+	postBanner := banner.BannerPutPostRequest{
 		TagIds:    newPostBanner.TagId,
 		FeatureId: newPostBanner.FeatureId,
 		Content:   string(someString[:]),
-		IsActive:  newPostBanner.IsActive,
+		IsActive:  *newPostBanner.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: newPostBanner.UpdatedAt,
 	}
@@ -132,10 +122,6 @@ func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int64
 }
 
 func (b *BannerService) PutBanner(newPutBanner BannerEntity, user User) (bool, bool, error) {
-	if !b.ifTokenSupplied(user) {
-		return false, false, fmt.Errorf("unauthorized user")
-	}
-
 	accessPermited, err := b.store.IfAdminTokenValid(user.Token)
 	if err != nil {
 		return false, accessPermited, err
@@ -156,15 +142,45 @@ func (b *BannerService) PutBanner(newPutBanner BannerEntity, user User) (bool, b
 	if err != nil {
 		return bannerExists, accessPermited, nil
 	}
-	putBanner := banner.BannerPostRequest{
+	putBanner := banner.BannerPutPostRequest{
 		TagIds:    newPutBanner.TagId,
 		FeatureId: newPutBanner.FeatureId,
 		Content:   string(someString[:]),
-		IsActive:  newPutBanner.IsActive,
 		ID:        newPutBanner.ID,
 	}
 
+	if newPutBanner.IsActive != nil {
+		putBanner.IfFlagActiveIsSet = *newPutBanner.IsActive
+	}
+
 	err = b.store.PutBanner(putBanner)
+
+	return bannerExists, accessPermited, err
+}
+
+func (b *BannerService) DeleteBanner(newDeleteBanner BannerEntity, user User) (bool, bool, error) {
+
+	accessPermited, err := b.store.IfAdminTokenValid(user.Token)
+	if err != nil {
+		return false, accessPermited, err
+	}
+	if !accessPermited {
+		return false, accessPermited, nil
+	}
+
+	bannerExists, err := b.store.SearchBannerByID(newDeleteBanner.ID)
+	if err != nil {
+		return false, accessPermited, err
+	}
+	if !bannerExists {
+		return bannerExists, accessPermited, nil
+	}
+
+	deleteBanner := banner.BannerPutPostRequest{
+		ID: newDeleteBanner.ID,
+	}
+
+	err = b.store.DeleteBanner(deleteBanner)
 
 	return bannerExists, accessPermited, err
 }
@@ -177,7 +193,7 @@ func (b *BannerService) createBannerEntity(bannerList []banner.BannerResponse) (
 			ID:        b.ID,
 			TagId:     b.TagId,
 			FeatureId: b.FeatureId,
-			IsActive:  b.IsActive,
+			IsActive:  &b.IsActive,
 			CreatedAt: b.CreatedAt,
 			UpdatedAt: b.UpdatedAt,
 		}
@@ -191,52 +207,4 @@ func (b *BannerService) createBannerEntity(bannerList []banner.BannerResponse) (
 	}
 
 	return bannerEntityList, nil
-}
-
-func (b *BannerService) verifyData(bannerFilter Filter) (banner.BannerRequest, error) {
-	var bannerRequest banner.BannerRequest
-	var err error
-
-	if bannerFilter.TagId != "" {
-		bannerRequest.TagId, err = strconv.Atoi(bannerFilter.TagId)
-		if err != nil {
-			return banner.BannerRequest{}, err
-		}
-	}
-
-	if bannerFilter.FeatureId != "" {
-		bannerRequest.FeatureId, err = strconv.Atoi(bannerFilter.FeatureId)
-		if err != nil {
-			return banner.BannerRequest{}, err
-		}
-	}
-
-	if bannerFilter.Limit != "" {
-		bannerRequest.Limit, err = strconv.Atoi(bannerFilter.Limit)
-		if err != nil {
-			return banner.BannerRequest{}, err
-		}
-	}
-
-	if bannerFilter.Offset != "" {
-		bannerRequest.Offset, err = strconv.Atoi(bannerFilter.Offset)
-		if err != nil {
-			return banner.BannerRequest{}, err
-		}
-	}
-
-	if bannerFilter.UseLastRevision == "" {
-		bannerRequest.UseLastRevision = false
-		return bannerRequest, nil
-	}
-
-	bannerRequest.UseLastRevision, err = strconv.ParseBool(bannerFilter.UseLastRevision)
-	if err != nil {
-		return banner.BannerRequest{}, err
-	}
-	return bannerRequest, nil
-}
-
-func (b *BannerService) ifTokenSupplied(user User) bool {
-	return user.Token != ""
 }

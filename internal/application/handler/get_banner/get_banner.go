@@ -1,4 +1,4 @@
-//go:generate mockgen -source=banner.go -destination=mocks/mock.go
+//go:generate mockgen -source=get_banner.go -destination=mocks/mock.go
 package adminbanner
 
 import (
@@ -7,12 +7,15 @@ import (
 	"time"
 
 	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	"github.com/gorilla/schema"
 )
 
 type bannerService interface {
-	SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error)
-	SearchAllBanners(bannerFilter banner.Filter, user banner.User) ([]banner.BannerEntity, bool, error)
-	PostBanner(newBanner banner.BannerEntity, user banner.User) (int64, bool, error)
+	SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error)
+	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
+	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
+	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
 }
 
 type Banner struct {
@@ -23,37 +26,73 @@ func NewBannerHandler(service bannerService) *Banner {
 	return &Banner{service: service}
 }
 
+type ErrorBody struct {
+	Error string `json:"error"`
+}
+
 func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 
-	bannerFilter := banner.Filter{
-		TagId:           r.FormValue("tag_id"),
-		FeatureId:       r.FormValue("feature_id"),
-		UseLastRevision: r.FormValue("use_last_revision"),
-		Limit:           r.FormValue("limit"),
-		Offset:          r.FormValue("offset"),
+	var decoder = schema.NewDecoder()
+
+	err := r.ParseForm()
+	if err != nil {
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseBody)
+		return
+	}
+
+	var bannerFilter banner.GetAllFilter
+	err = decoder.Decode(&bannerFilter, r.Form)
+	if err != nil {
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseBody)
+		return
 	}
 
 	user := banner.User{
 		Token: r.Header.Get("token"),
 	}
+	if user.Token == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	foundBanners, accessPermited, err := b.service.SearchAllBanners(bannerFilter, user)
 	switch {
-	case err != nil && err.Error() == "unauthorized user":
-		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
-		return
 	case err != nil:
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(responseBody)
 		return
 	case !accessPermited:
-		http.Error(w, "Пользователь не имеет доступа", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	default:
 	}
 
 	jsonContent, err := b.createFromEntity(foundBanners)
 	if err != nil {
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(responseBody)
 		return
 	}
 
@@ -74,13 +113,12 @@ func (b *Banner) createFromEntity(entityList []banner.BannerEntity) ([]byte, err
 	}
 
 	var result []response
-
 	for _, entity := range entityList {
 		partOfSlice := response{ID: entity.ID,
 			Content:   entity.Content,
 			TagId:     entity.TagId,
 			FeatureId: entity.FeatureId,
-			IsActive:  entity.IsActive,
+			IsActive:  *entity.IsActive,
 			CreatedAt: entity.CreatedAt,
 			UpdatedAt: entity.UpdatedAt}
 		result = append(result, partOfSlice)

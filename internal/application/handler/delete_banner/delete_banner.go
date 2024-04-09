@@ -1,5 +1,5 @@
-//go:generate mockgen -source=put_banner.go -destination=mocks/mock.go
-package putbanner
+//go:generate mockgen -source=delete_banner.go -destination=mocks/mock.go
+package deletebanner
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type putBannerService interface {
+type deleteBannerService interface {
 	SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error)
 	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
 	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
@@ -18,35 +18,23 @@ type putBannerService interface {
 	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
 }
 
-type PutBanner struct {
-	service putBannerService
+type DeleteBanner struct {
+	service deleteBannerService
 }
 
-func NewPutBannerHandler(service putBannerService) *PutBanner {
-	return &PutBanner{service: service}
+func NewDeleteBannerHandler(service deleteBannerService) *DeleteBanner {
+	return &DeleteBanner{service: service}
 }
 
 type ErrorBody struct {
 	Error string `json:"error"`
 }
 
-func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
-	var putBanner banner.BannerEntity
+func (dB *DeleteBanner) DeleteBanner(w http.ResponseWriter, r *http.Request) {
+	var postBanner banner.BannerEntity
 	var err error
 	bannerID := mux.Vars(r)["id"]
-	putBanner.ID, err = strconv.Atoi(bannerID)
-	if err != nil {
-		response := ErrorBody{
-			Error: err.Error(),
-		}
-		responseBody, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(responseBody)
-		return
-	}
-
-	err = json.NewDecoder(r.Body).Decode(&putBanner)
+	postBanner.ID, err = strconv.Atoi(bannerID)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -66,7 +54,7 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, accessPermited, err := ptB.service.PutBanner(putBanner, user)
+	found, accessPermited, err := dB.service.DeleteBanner(postBanner, user)
 	switch {
 	case err != nil:
 		response := ErrorBody{
@@ -86,5 +74,6 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
+	w.Write([]byte("Баннер успешно удален"))
 }

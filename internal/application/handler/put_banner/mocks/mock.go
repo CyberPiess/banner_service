@@ -34,11 +34,27 @@ func (m *MockputBannerService) EXPECT() *MockputBannerServiceMockRecorder {
 	return m.recorder
 }
 
+// DeleteBanner mocks base method.
+func (m *MockputBannerService) DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteBanner", newPutBanner, user)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// DeleteBanner indicates an expected call of DeleteBanner.
+func (mr *MockputBannerServiceMockRecorder) DeleteBanner(newPutBanner, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBanner", reflect.TypeOf((*MockputBannerService)(nil).DeleteBanner), newPutBanner, user)
+}
+
 // PostBanner mocks base method.
-func (m *MockputBannerService) PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int64, bool, error) {
+func (m *MockputBannerService) PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostBanner", newPostBanner, user)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -67,7 +83,7 @@ func (mr *MockputBannerServiceMockRecorder) PutBanner(newPutBanner, user interfa
 }
 
 // SearchAllBanners mocks base method.
-func (m *MockputBannerService) SearchAllBanners(bannerFilter banner.Filter, user banner.User) ([]banner.BannerEntity, bool, error) {
+func (m *MockputBannerService) SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchAllBanners", bannerFilter, user)
 	ret0, _ := ret[0].([]banner.BannerEntity)
@@ -83,7 +99,7 @@ func (mr *MockputBannerServiceMockRecorder) SearchAllBanners(bannerFilter, user 
 }
 
 // SearchBanner mocks base method.
-func (m *MockputBannerService) SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error) {
+func (m *MockputBannerService) SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchBanner", bannerFilter, user)
 	ret0, _ := ret[0].(banner.BannerEntity)

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	deleteBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/delete_banner"
 	adminBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner"
 	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
 	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/post_banner"
@@ -25,7 +25,6 @@ func main() {
 
 	currentDir, _ := os.Getwd()
 	envFilePath := filepath.Join(currentDir, "..", "build\\.env")
-	fmt.Println(envFilePath)
 	err := godotenv.Load(envFilePath)
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -54,11 +53,13 @@ func main() {
 	adminBannerHandler := adminBanner.NewBannerHandler(bannerService)
 	postBannerHandler := postBanner.NewPostBannerHandler(bannerService)
 	putBannerHandler := putBanner.NewPutBannerHandler(bannerService)
+	deleteBannerHandler := deleteBanner.NewDeleteBannerHandler(bannerService)
 
 	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", adminBannerHandler.GetAllBanners).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", postBannerHandler.PostBanner).Methods(http.MethodPost)
 	mux.HandleFunc("/banner/{id}", putBannerHandler.PutBanner).Methods(http.MethodPut)
+	mux.HandleFunc("/banner/{id}", deleteBannerHandler.DeleteBanner).Methods(http.MethodDelete)
 
 	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)

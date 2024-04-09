@@ -6,12 +6,15 @@ import (
 	"net/http"
 
 	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	"github.com/gorilla/schema"
 )
 
 type bannerService interface {
-	SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error)
-	SearchAllBanners(bannerFilter banner.Filter, user banner.User) ([]banner.BannerEntity, bool, error)
-	PostBanner(newBanner banner.BannerEntity, user banner.User) (int64, bool, error)
+	SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error)
+	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
+	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
+	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
 }
 
 type Banner struct {
@@ -22,41 +25,75 @@ func NewBannerHandler(service bannerService) *Banner {
 	return &Banner{service: service}
 }
 
-func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
+type ErrorBody struct {
+	Error string `json:"error"`
+}
 
-	bannerFilter := banner.Filter{
-		TagId:           r.FormValue("tag_id"),
-		FeatureId:       r.FormValue("feature_id"),
-		UseLastRevision: r.FormValue("use_last_revision"),
+func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
+	var decoder = schema.NewDecoder()
+
+	err := r.ParseForm()
+	if err != nil {
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseBody)
+		return
+	}
+
+	var bannerFilter banner.GetFilter
+	err = decoder.Decode(&bannerFilter, r.Form)
+	if err != nil {
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseBody)
+		return
 	}
 
 	user := banner.User{
 		Token: r.Header.Get("token"),
 	}
+	if user.Token == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	newBanner, accessPermited, err := b.service.SearchBanner(bannerFilter, user)
 	switch {
-	case err != nil && err.Error() == "unauthorized user":
-		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
-		return
-	case err != nil && err.Error() == "wrong data supplied":
-		http.Error(w, "Некорректные данные", http.StatusBadRequest)
-		return
 	case err != nil:
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(responseBody)
 		return
 	case !accessPermited:
-		http.Error(w, "Пользователь не имеет доступа", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	case newBanner.Content == nil:
-		http.Error(w, "Баннер не найден", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	default:
 	}
 
 	jsonContent, err := b.createFromEntity(newBanner)
 	if err != nil {
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		response := ErrorBody{
+			Error: err.Error(),
+		}
+		responseBody, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(responseBody)
 		return
 	}
 

@@ -27,7 +27,6 @@ func TestPutBanner(t *testing.T) {
 	putBannerHandler := NewPutBannerHandler(mockBannerService)
 
 	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(true, true, nil)
-	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, false, fmt.Errorf("unauthorized user"))
 	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, false, nil)
 	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, true, nil)
 	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(true, true, fmt.Errorf("some inner error"))

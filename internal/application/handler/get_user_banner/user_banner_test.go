@@ -31,14 +31,6 @@ func TestGetUserBanner(t *testing.T) {
 			true, nil).Times(2)
 
 	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{}, true, fmt.Errorf("unauthorized user"))
-
-	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
-			true,
-			fmt.Errorf("wrong data supplied")).Times(4)
-
-	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
 		Return(banner.BannerEntity{},
 			true,
 			nil)
@@ -72,7 +64,7 @@ func TestGetUserBanner(t *testing.T) {
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodGet,
-					"http://localhost:8080/user_banner?tag_id=1&feature_id=123&use_last_rebision=true", nil),
+					"http://localhost:8080/user_banner?tag_id=1&feature_id=123&use_last_revision=true", nil),
 				token: "some_token"},
 			want: 200,
 		},
@@ -81,7 +73,7 @@ func TestGetUserBanner(t *testing.T) {
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodGet,
-					"http://localhost:8080/user_banner?tag_id=1&feature_id=123&use_last_rebision=true", nil),
+					"http://localhost:8080/user_banner?tag_id=1&feature_id=123", nil),
 				token: ""},
 			want: 401,
 		},

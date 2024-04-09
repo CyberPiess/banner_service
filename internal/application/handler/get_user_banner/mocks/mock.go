@@ -34,24 +34,56 @@ func (m *MockbannerService) EXPECT() *MockbannerServiceMockRecorder {
 	return m.recorder
 }
 
-// PostBanner mocks base method.
-func (m *MockbannerService) PostBanner(newBanner banner.BannerEntity, user banner.User) (int64, bool, error) {
+// DeleteBanner mocks base method.
+func (m *MockbannerService) DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PostBanner", newBanner, user)
-	ret0, _ := ret[0].(int64)
+	ret := m.ctrl.Call(m, "DeleteBanner", newPutBanner, user)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// DeleteBanner indicates an expected call of DeleteBanner.
+func (mr *MockbannerServiceMockRecorder) DeleteBanner(newPutBanner, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBanner", reflect.TypeOf((*MockbannerService)(nil).DeleteBanner), newPutBanner, user)
+}
+
+// PostBanner mocks base method.
+func (m *MockbannerService) PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PostBanner", newPostBanner, user)
+	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // PostBanner indicates an expected call of PostBanner.
-func (mr *MockbannerServiceMockRecorder) PostBanner(newBanner, user interface{}) *gomock.Call {
+func (mr *MockbannerServiceMockRecorder) PostBanner(newPostBanner, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostBanner", reflect.TypeOf((*MockbannerService)(nil).PostBanner), newBanner, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostBanner", reflect.TypeOf((*MockbannerService)(nil).PostBanner), newPostBanner, user)
+}
+
+// PutBanner mocks base method.
+func (m *MockbannerService) PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutBanner", newPutBanner, user)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// PutBanner indicates an expected call of PutBanner.
+func (mr *MockbannerServiceMockRecorder) PutBanner(newPutBanner, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutBanner", reflect.TypeOf((*MockbannerService)(nil).PutBanner), newPutBanner, user)
 }
 
 // SearchAllBanners mocks base method.
-func (m *MockbannerService) SearchAllBanners(bannerFilter banner.Filter, user banner.User) ([]banner.BannerEntity, bool, error) {
+func (m *MockbannerService) SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchAllBanners", bannerFilter, user)
 	ret0, _ := ret[0].([]banner.BannerEntity)
@@ -67,7 +99,7 @@ func (mr *MockbannerServiceMockRecorder) SearchAllBanners(bannerFilter, user int
 }
 
 // SearchBanner mocks base method.
-func (m *MockbannerService) SearchBanner(bannerFilter banner.Filter, user banner.User) (banner.BannerEntity, bool, error) {
+func (m *MockbannerService) SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchBanner", bannerFilter, user)
 	ret0, _ := ret[0].(banner.BannerEntity)
