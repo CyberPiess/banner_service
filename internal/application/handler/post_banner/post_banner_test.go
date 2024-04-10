@@ -31,12 +31,20 @@ func TestPostBanner(t *testing.T) {
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, nil)
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, fmt.Errorf("some error"))
 
-	objectToSerializeToJSON := "{ \"tag_ids\": [1,2,3], \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
+	validRewuestBody := "{ \"tag_ids\": [1,2,3], \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
+	absentTagId := "{ \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
+	absentFeatureId := "{\"tag_ids\": [1,2,3], \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
+	absentContent := "{\"tag_ids\": [1,2,3], \"feature_id\": 1, \"is_active\": false}"
+	absentIsActive := "{\"tag_ids\": [1,2,3], \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}}"
 
-	validBody := strings.NewReader(objectToSerializeToJSON)
-	validBody2 := strings.NewReader(objectToSerializeToJSON)
-	validBody3 := strings.NewReader(objectToSerializeToJSON)
-	validBody4 := strings.NewReader(objectToSerializeToJSON)
+	validBody := strings.NewReader(validRewuestBody)
+	validBody2 := strings.NewReader(validRewuestBody)
+	validBody3 := strings.NewReader(validRewuestBody)
+	validBody4 := strings.NewReader(validRewuestBody)
+	noTagID := strings.NewReader(absentTagId)
+	noFeatureID := strings.NewReader(absentFeatureId)
+	noContent := strings.NewReader(absentContent)
+	noIsActive := strings.NewReader(absentIsActive)
 
 	test := []struct {
 		name string
@@ -60,6 +68,46 @@ func TestPostBanner(t *testing.T) {
 				r: httptest.NewRequest(
 					http.MethodPost,
 					"http://localhost:8080/banner", nil),
+				token: "some_token"},
+			want: 400,
+		},
+		{
+			name: "Empty tag_ids",
+			args: args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest(
+					http.MethodPost,
+					"http://localhost:8080/banner", noTagID),
+				token: "some_token"},
+			want: 400,
+		},
+		{
+			name: "Empty feature_id",
+			args: args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest(
+					http.MethodPost,
+					"http://localhost:8080/banner", noFeatureID),
+				token: "some_token"},
+			want: 400,
+		},
+		{
+			name: "Empty feature_id",
+			args: args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest(
+					http.MethodPost,
+					"http://localhost:8080/banner", noContent),
+				token: "some_token"},
+			want: 400,
+		},
+		{
+			name: "Empty feature_id",
+			args: args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest(
+					http.MethodPost,
+					"http://localhost:8080/banner", noIsActive),
 				token: "some_token"},
 			want: 400,
 		},
