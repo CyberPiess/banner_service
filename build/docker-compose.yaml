@@ -14,7 +14,21 @@ services:
       - .env
     volumes:
       - local_pgdata:/var/lib/postgres/data
+
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    env_file:
+      - .env
+    volumes: 
+      - cache:/data
+
 volumes:
   local_pgdata:
   pgadmin-data:
+    driver: local
+  cache:
     driver: local

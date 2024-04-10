@@ -3,9 +3,11 @@ package banner
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
+	redis "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
 )
 
 type bannerStorage interface {
@@ -19,12 +21,21 @@ type bannerStorage interface {
 	PutBanner(putBannerParams banner.BannerPutPostRequest) error
 	DeleteBanner(deleteBannerParams banner.BannerPutPostRequest) error
 }
-type BannerService struct {
-	store bannerStorage
+
+type redisCache interface {
+	AddToCache(key string, redisDTO redis.RedisDTO) error
+	GetFromCache(key string) (redis.RedisDTO, error)
+	DeleteFromCache(key string) error
 }
 
-func NewBannerService(storage bannerStorage) *BannerService {
-	return &BannerService{store: storage}
+type BannerService struct {
+	store bannerStorage
+	redis redisCache
+}
+
+func NewBannerService(storage bannerStorage, redis redisCache) *BannerService {
+	return &BannerService{store: storage,
+		redis: redis}
 }
 
 func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerEntity, bool, error) {
@@ -34,6 +45,22 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 	}
 	if !validToken {
 		return BannerEntity{}, validToken, nil
+	}
+	cacheKey := fmt.Sprintf("tag_id=%d&feature_id=%d", bannerFilter.TagId, bannerFilter.FeatureId)
+	//ToDo: Check attentively
+	if !bannerFilter.UseLastRevision {
+		foundInCahce, err := b.redis.GetFromCache(cacheKey)
+		if err != nil {
+			log.Printf("error redis: %s", err.Error())
+		}
+		if foundInCahce.Content != "" {
+			var bannerEntity BannerEntity
+			err := json.Unmarshal([]byte(foundInCahce.Content), &bannerEntity.Content)
+			if err != nil {
+				return BannerEntity{}, validToken, err
+			}
+			return bannerEntity, validToken, err
+		}
 	}
 
 	bannerExists, err := b.store.IfBannerExists(bannerFilter.TagId, bannerFilter.FeatureId)
@@ -58,6 +85,15 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 	bannerEntity, err := b.createBannerEntity(banner)
 	if err != nil {
 		return BannerEntity{}, validToken, err
+	}
+
+	bannerContent, err := json.Marshal(bannerEntity[0].Content)
+	if err != nil {
+		log.Printf("error redis: %s", err.Error())
+	}
+	err = b.redis.AddToCache(cacheKey, redis.RedisDTO{Content: string(bannerContent)})
+	if err != nil {
+		log.Printf("error redis: %s", err.Error())
 	}
 
 	return bannerEntity[0], validToken, nil

@@ -17,6 +17,8 @@ import (
 
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
 	bannerStorage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
+	"github.com/CyberPiess/banner_sevice/internal/infrastructure/redis"
+	redisCache "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
 
 	"github.com/joho/godotenv"
 )
@@ -40,14 +42,24 @@ func main() {
 		SSLMode:  os.Getenv("SSLMODE"),
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 	})
-	defer db.Close()
-
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
+	defer db.Close()
+
+	client, err := redis.NewRedis(redis.Config{
+		Addres:        os.Getenv("REDIS_ADDRESS"),
+		RedisPassword: os.Getenv("REDIS_PASSWORD"),
+	})
+
+	if err != nil {
+		log.Fatalf("failed to initialize redis: %s", err.Error())
+	}
+	defer client.Close()
 
 	bannerStore := bannerStorage.NewBannerRepository(db)
-	bannerService := bannerService.NewBannerService(bannerStore)
+	redisCache := redisCache.NewBannerCache(client)
+	bannerService := bannerService.NewBannerService(bannerStore, redisCache)
 
 	bannerHandler := userBanner.NewBannerHandler(bannerService)
 	adminBannerHandler := adminBanner.NewBannerHandler(bannerService)
