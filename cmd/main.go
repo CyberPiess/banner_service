@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
+	createBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/create_banner"
 	deleteBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/delete_banner"
-	adminBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner"
-	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
-	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/post_banner"
-	putBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/put_banner"
+	getBannerList "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner_list"
+	getUserBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
+	updateBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/update_banner"
 
 	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/gorilla/mux"
@@ -61,13 +61,13 @@ func main() {
 	redisCache := redisCache.NewBannerCache(client)
 	bannerService := bannerService.NewBannerService(bannerStore, redisCache)
 
-	bannerHandler := userBanner.NewBannerHandler(bannerService)
-	adminBannerHandler := adminBanner.NewBannerHandler(bannerService)
-	postBannerHandler := postBanner.NewPostBannerHandler(bannerService)
-	putBannerHandler := putBanner.NewPutBannerHandler(bannerService)
+	userBannerHandler := getUserBanner.NewBannerHandler(bannerService)
+	adminBannerHandler := getBannerList.NewGetAllBannersHandler(bannerService)
+	postBannerHandler := createBanner.NewPostBannerHandler(bannerService)
+	putBannerHandler := updateBanner.NewPutBannerHandler(bannerService)
 	deleteBannerHandler := deleteBanner.NewDeleteBannerHandler(bannerService)
 
-	mux.HandleFunc("/user_banner", bannerHandler.GetUserBanner).Methods(http.MethodGet)
+	mux.HandleFunc("/user_banner", userBannerHandler.GetUserBanner).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", adminBannerHandler.GetAllBanners).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", postBannerHandler.PostBanner).Methods(http.MethodPost)
 	mux.HandleFunc("/banner/{id}", putBannerHandler.PutBanner).Methods(http.MethodPut)

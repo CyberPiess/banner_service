@@ -114,7 +114,7 @@ func migrateDb(dbAddr string) error {
 	}
 	pathToMigrationFiles := filepath.Dir(path) + "../../../../db/migration"
 
-	databaseURL := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", DbUser, DbPass, dbAddr, DbName)
+	databaseURL := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s", DbUser, DbPass, dbAddr, DbName, DbMode)
 
 	m, err := migrate.New(fmt.Sprintf("file:%s", pathToMigrationFiles), databaseURL)
 	if err != nil {

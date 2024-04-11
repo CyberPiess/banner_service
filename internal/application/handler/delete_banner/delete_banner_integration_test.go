@@ -1,4 +1,4 @@
-package userbanner_test
+package deletebanner_test
 
 import (
 	"database/sql"
@@ -8,13 +8,14 @@ import (
 	"os"
 	"testing"
 
-	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
+	deleteBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/delete_banner"
 	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
 	storage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
 	rd "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis"
-	bannerCachePkg "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
+	bannerCache "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
 	"github.com/go-redis/redis"
+	"github.com/gorilla/mux"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,6 @@ func TestMain(m *testing.M) {
 	testDbInstance = testDB.DbInstance
 	testRedisInstance = testRedis.RedisInstance
 	defer testDB.TearDown()
-	defer testRedis.TearDown()
 	os.Exit(m.Run())
 }
 
@@ -37,17 +37,16 @@ type args struct {
 	w     *httptest.ResponseRecorder
 	r     *http.Request
 	token string
+	id    string
 }
 
-func TestIntegrationGetUserBanner(t *testing.T) {
+func TestIntegrationDeleteBanner(t *testing.T) {
 
 	bannerStore := storage.NewBannerRepository(testDbInstance)
-	bannerCache := bannerCachePkg.NewBannerCache(testRedisInstance)
-	testRedisDTO := bannerCachePkg.RedisEntity{Content: `{"title": "sometitle"}`}
-	bannerCache.AddToCache("tag_id=5&feature_id=1", testRedisDTO)
+	bannerCache := bannerCache.NewBannerCache(testRedisInstance)
 	bannerService := banner.NewBannerService(bannerStore, bannerCache)
 
-	bannerHandler := userBanner.NewBannerHandler(bannerService)
+	deleteBannerHandler := deleteBanner.NewDeleteBannerHandler(bannerService)
 
 	tests := []struct {
 		name string
@@ -59,31 +58,34 @@ func TestIntegrationGetUserBanner(t *testing.T) {
 			name: "Correct request",
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
-					http.MethodGet,
-					"http://localhost:8080/user_banner?tag_id=1&feature_id=1", nil),
-				token: "user_token"},
-			want: 200,
-			body: `{"text":"some_text","title":"some_title","url":"some_url"}`,
+					http.MethodDelete,
+					"http://localhost:8080/banner/{id}", nil),
+				token: "admin_token",
+				id:    "1"},
+			want: 204,
+			body: "",
 		},
 		{
-			name: "Correct request to cache",
+			name: "Not Found",
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
-					http.MethodGet,
-					"http://localhost:8080/user_banner?tag_id=5&feature_id=1", nil),
-				token: "user_token"},
-			want: 200,
-			body: `{"title":"sometitle"}`,
-		},
-		{
-			name: "No banner",
-			args: args{w: httptest.NewRecorder(),
-				r: httptest.NewRequest(
-					http.MethodGet,
-					"http://localhost:8080/user_banner?tag_id=6&feature_id=1", nil),
-				token: "user_token"},
+					http.MethodDelete,
+					"http://localhost:8080/banner/{id}", nil),
+				token: "admin_token",
+				id:    "1"},
 			want: 404,
-			body: ``,
+			body: "",
+		},
+		{
+			name: "User Token",
+			args: args{w: httptest.NewRecorder(),
+				r: httptest.NewRequest(
+					http.MethodDelete,
+					"http://localhost:8080/banner/{id}", nil),
+				token: "user_token",
+				id:    "1"},
+			want: 403,
+			body: "",
 		},
 	}
 
@@ -91,12 +93,12 @@ func TestIntegrationGetUserBanner(t *testing.T) {
 		w := tt.args.w
 		req := tt.args.r
 		req.Header.Set("token", tt.args.token)
-
-		bannerHandler.GetUserBanner(w, req)
+		req = mux.SetURLVars(req, map[string]string{"id": tt.args.id})
+		deleteBannerHandler.DeleteBanner(w, req)
 		data, err := io.ReadAll(w.Body)
+
 		require.NoError(t, err)
 		assert.Equal(t, tt.want, w.Code)
 		assert.Equal(t, tt.body, string(data))
-
 	}
 }

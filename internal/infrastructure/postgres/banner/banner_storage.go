@@ -15,8 +15,8 @@ func NewBannerRepository(db *sql.DB) *BannerRepository {
 	return &BannerRepository{db: db}
 }
 
-func (bn *BannerRepository) Get(bannerParams BannerRequest) ([]BannerResponse, error) {
-	var banner BannerResponse
+func (bn *BannerRepository) Get(bannerParams BannerCriteria) ([]BannerEntitySql, error) {
+	var banner BannerEntitySql
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
@@ -25,21 +25,21 @@ func (bn *BannerRepository) Get(bannerParams BannerRequest) ([]BannerResponse, e
 		Join("tags as t on b.id = t.banner_id").Join("features as f on b.id = f.banner_id").
 		Where("feature_id = ? and tag_id = ? and is_active = true", bannerParams.FeatureId, bannerParams.TagId).ToSql()
 	if err != nil {
-		return []BannerResponse{}, err
+		return []BannerEntitySql{}, err
 	}
 
 	row := bn.db.QueryRow(query, args...)
 	err = row.Scan(&banner.Content)
 	if err != nil {
-		return []BannerResponse{}, err
+		return []BannerEntitySql{}, err
 	}
 
-	return []BannerResponse{banner}, nil
+	return []BannerEntitySql{banner}, nil
 }
 
-func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerResponse, error) {
+func (bn *BannerRepository) GetAllBanners(bannerParams BannerCriteria) ([]BannerEntitySql, error) {
 
-	var bannerResultSlice []BannerResponse
+	var bannerResultSlice []BannerEntitySql
 	var bannersQuery string
 	var args []interface{}
 	var err error
@@ -80,7 +80,7 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 	if len(bannerIDSlice) > 0 {
 		selectAllBanners = selectAllBanners.Where(sq.Eq{"id": bannerIDSlice})
 	} else {
-		return []BannerResponse{}, nil
+		return []BannerEntitySql{}, nil
 	}
 	if bannerParams.Limit != 0 {
 		selectAllBanners = selectAllBanners.Limit(uint64(bannerParams.Limit))
@@ -100,7 +100,7 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 	defer bannerRows.Close()
 
 	for bannerRows.Next() {
-		var banner BannerResponse
+		var banner BannerEntitySql
 		var updateTime sql.NullTime
 		err = bannerRows.Scan(&banner.ID, &banner.Content, &banner.IsActive,
 			&banner.CreatedAt, &updateTime, &banner.FeatureId)
@@ -113,11 +113,11 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 		}
 		selTags, args, err := psql.Select("tag_id").From("tags").Where("banner_id = ?", banner.ID).ToSql()
 		if err != nil {
-			return []BannerResponse{}, err
+			return []BannerEntitySql{}, err
 		}
 		tagsRows, err := bn.db.Query(selTags, args...)
 		if err != nil {
-			return []BannerResponse{}, err
+			return []BannerEntitySql{}, err
 		}
 		defer tagsRows.Close()
 		var tagID int
@@ -133,7 +133,7 @@ func (bn *BannerRepository) GetAllBanners(bannerParams BannerRequest) ([]BannerR
 	return bannerResultSlice, nil
 }
 
-func (bn *BannerRepository) PostBanner(postBannerParams BannerPutPostRequest) (int, error) {
+func (bn *BannerRepository) PostBanner(postBannerParams BannerPutPostCriteria) (int, error) {
 	var createdID int
 	tx, err := bn.db.Begin()
 
@@ -169,7 +169,7 @@ func (bn *BannerRepository) PostBanner(postBannerParams BannerPutPostRequest) (i
 	return createdID, err
 }
 
-func (bn *BannerRepository) PutBanner(putBannerParams BannerPutPostRequest) error {
+func (bn *BannerRepository) PutBanner(putBannerParams BannerPutPostCriteria) error {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	tx, err := bn.db.Begin()
@@ -213,7 +213,7 @@ func (bn *BannerRepository) PutBanner(putBannerParams BannerPutPostRequest) erro
 	return err
 }
 
-func (bn *BannerRepository) DeleteBanner(putBannerParams BannerPutPostRequest) error {
+func (bn *BannerRepository) DeleteBanner(putBannerParams BannerPutPostCriteria) error {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	tx, err := bn.db.Begin()

@@ -2,7 +2,7 @@ package banner
 
 import "time"
 
-type BannerRequest struct {
+type BannerCriteria struct {
 	TagId           int
 	FeatureId       int
 	UseLastRevision bool
@@ -10,7 +10,7 @@ type BannerRequest struct {
 	Offset          int
 }
 
-type BannerResponse struct {
+type BannerEntitySql struct {
 	ID        int    `db:"id"`
 	Content   string `db:"content"`
 	TagId     []int
@@ -20,7 +20,7 @@ type BannerResponse struct {
 	FeatureId int       `db:"feature_id"`
 }
 
-type BannerPutPostRequest struct {
+type BannerPutPostCriteria struct {
 	ID                int
 	TagIds            []int
 	FeatureId         int

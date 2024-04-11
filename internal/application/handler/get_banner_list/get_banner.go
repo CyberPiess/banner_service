@@ -1,5 +1,5 @@
 //go:generate mockgen -source=get_banner.go -destination=mocks/mock.go
-package adminbanner
+package getbannerlist
 
 import (
 	"encoding/json"
@@ -15,14 +15,14 @@ type bannerService interface {
 	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
 	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
 	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
-	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+	DeleteBanner(newDeleteBanner banner.BannerEntity, user banner.User) (bool, bool, error)
 }
 
 type Banner struct {
 	service bannerService
 }
 
-func NewBannerHandler(service bannerService) *Banner {
+func NewGetAllBannersHandler(service bannerService) *Banner {
 	return &Banner{service: service}
 }
 
@@ -122,6 +122,10 @@ func (b *Banner) createFromEntity(entityList []banner.BannerEntity) ([]byte, err
 			CreatedAt: entity.CreatedAt,
 			UpdatedAt: entity.UpdatedAt}
 		result = append(result, partOfSlice)
+	}
+
+	if len(result) == 0 {
+		return []byte("[]"), nil
 	}
 
 	jsonContent, err := json.Marshal(result)

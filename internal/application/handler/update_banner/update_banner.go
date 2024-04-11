@@ -1,5 +1,5 @@
 //go:generate mockgen -source=put_banner.go -destination=mocks/mock.go
-package putbanner
+package updatebanner
 
 import (
 	"encoding/json"

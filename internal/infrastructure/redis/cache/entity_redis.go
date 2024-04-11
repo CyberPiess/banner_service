@@ -1,5 +1,5 @@
 package redis_cache
 
-type RedisDTO struct {
+type RedisEntity struct {
 	Content string
 }

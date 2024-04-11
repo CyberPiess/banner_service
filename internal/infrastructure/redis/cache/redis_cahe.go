@@ -14,16 +14,16 @@ func NewBannerCache(client *redis.Client) *RedisCache {
 	return &RedisCache{client: client}
 }
 
-func (rc *RedisCache) AddToCache(key string, redisDTO RedisDTO) error {
+func (rc *RedisCache) AddToCache(key string, redisDTO RedisEntity) error {
 
 	_, err := rc.client.Set(key, redisDTO.Content, time.Minute*5).Result()
 
 	return err
 }
 
-func (rc *RedisCache) GetFromCache(key string) (RedisDTO, error) {
+func (rc *RedisCache) GetFromCache(key string) (RedisEntity, error) {
 
-	var redisDTO RedisDTO
+	var redisDTO RedisEntity
 
 	err := rc.client.Get(key).Scan(&redisDTO.Content)
 

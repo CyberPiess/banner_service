@@ -1,4 +1,4 @@
-package postbanner
+package createbanner
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/post_banner/mocks"
+	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/create_banner/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

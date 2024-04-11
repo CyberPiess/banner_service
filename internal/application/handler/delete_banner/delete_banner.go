@@ -15,7 +15,7 @@ type deleteBannerService interface {
 	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
 	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
 	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
-	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+	DeleteBanner(newDeleteBanner banner.BannerEntity, user banner.User) (bool, bool, error)
 }
 
 type DeleteBanner struct {
@@ -31,21 +31,19 @@ type ErrorBody struct {
 }
 
 func (dB *DeleteBanner) DeleteBanner(w http.ResponseWriter, r *http.Request) {
-	var postBanner banner.BannerEntity
+	var deleteBanner banner.BannerEntity
 	var err error
+	var response ErrorBody
 	bannerID := mux.Vars(r)["id"]
-	postBanner.ID, err = strconv.Atoi(bannerID)
+	deleteBanner.ID, err = strconv.Atoi(bannerID)
 	if err != nil {
-		response := ErrorBody{
-			Error: err.Error(),
-		}
+		response.Error = err.Error()
 		responseBody, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(responseBody)
 		return
 	}
-
 	user := banner.User{
 		Token: r.Header.Get("token"),
 	}
@@ -54,12 +52,10 @@ func (dB *DeleteBanner) DeleteBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, accessPermited, err := dB.service.DeleteBanner(postBanner, user)
+	found, accessPermited, err := dB.service.DeleteBanner(deleteBanner, user)
 	switch {
 	case err != nil:
-		response := ErrorBody{
-			Error: err.Error(),
-		}
+		response.Error = err.Error()
 		responseBody, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -75,5 +71,4 @@ func (dB *DeleteBanner) DeleteBanner(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("Баннер успешно удален"))
 }

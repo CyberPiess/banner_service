@@ -1,4 +1,4 @@
-package adminbanner
+package getbannerlist
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	getBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner/mocks"
+	getBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner_list/mocks"
 	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +25,7 @@ func TestGetAllBanners(t *testing.T) {
 
 	mockBannerService := getBanner.NewMockbannerService(ctrl)
 
-	bannerHandler := NewBannerHandler(mockBannerService)
+	bannerHandler := NewGetAllBannersHandler(mockBannerService)
 	isActive := true
 
 	testBannerEntity := banner.BannerEntity{ID: 1,

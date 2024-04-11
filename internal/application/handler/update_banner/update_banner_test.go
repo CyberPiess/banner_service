@@ -1,4 +1,4 @@
-package putbanner
+package updatebanner
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	putBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/put_banner/mocks"
+	putBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/update_banner/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"

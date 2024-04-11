@@ -11,20 +11,20 @@ import (
 )
 
 type bannerStorage interface {
-	Get(bannerRequest banner.BannerRequest) ([]banner.BannerResponse, error)
+	Get(bannerRequest banner.BannerCriteria) ([]banner.BannerEntitySql, error)
 	IfTokenValid(token string) (bool, error)
 	IfBannerExists(featureId int, tagId int) (bool, error)
 	IfAdminTokenValid(token string) (bool, error)
 	SearchBannerByID(bannerID int) (bool, error)
-	GetAllBanners(bannerParams banner.BannerRequest) ([]banner.BannerResponse, error)
-	PostBanner(postBannerParams banner.BannerPutPostRequest) (int, error)
-	PutBanner(putBannerParams banner.BannerPutPostRequest) error
-	DeleteBanner(deleteBannerParams banner.BannerPutPostRequest) error
+	GetAllBanners(bannerParams banner.BannerCriteria) ([]banner.BannerEntitySql, error)
+	PostBanner(postBannerParams banner.BannerPutPostCriteria) (int, error)
+	PutBanner(putBannerParams banner.BannerPutPostCriteria) error
+	DeleteBanner(deleteBannerParams banner.BannerPutPostCriteria) error
 }
 
 type redisCache interface {
-	AddToCache(key string, redisDTO redis.RedisDTO) error
-	GetFromCache(key string) (redis.RedisDTO, error)
+	AddToCache(key string, redisDTO redis.RedisEntity) error
+	GetFromCache(key string) (redis.RedisEntity, error)
 	DeleteFromCache(key string) error
 }
 
@@ -71,7 +71,7 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 		return BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest := banner.BannerRequest{
+	bannerRequest := banner.BannerCriteria{
 		TagId:           bannerFilter.TagId,
 		FeatureId:       bannerFilter.FeatureId,
 		UseLastRevision: bannerFilter.UseLastRevision,
@@ -91,7 +91,7 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 	if err != nil {
 		log.Printf("error redis: %s", err.Error())
 	}
-	err = b.redis.AddToCache(cacheKey, redis.RedisDTO{Content: string(bannerContent)})
+	err = b.redis.AddToCache(cacheKey, redis.RedisEntity{Content: string(bannerContent)})
 	if err != nil {
 		log.Printf("error redis: %s", err.Error())
 	}
@@ -108,7 +108,7 @@ func (b *BannerService) SearchAllBanners(bannerFilter GetAllFilter, user User) (
 		return []BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest := banner.BannerRequest{
+	bannerRequest := banner.BannerCriteria{
 		TagId:     bannerFilter.TagId,
 		FeatureId: bannerFilter.FeatureId,
 		Limit:     bannerFilter.Limit,
@@ -141,7 +141,7 @@ func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int, 
 	if err != nil {
 		return 0, accessPermited, err
 	}
-	postBanner := banner.BannerPutPostRequest{
+	postBanner := banner.BannerPutPostCriteria{
 		TagIds:    newPostBanner.TagId,
 		FeatureId: newPostBanner.FeatureId,
 		Content:   string(someString[:]),
@@ -178,7 +178,7 @@ func (b *BannerService) PutBanner(newPutBanner BannerEntity, user User) (bool, b
 	if err != nil {
 		return bannerExists, accessPermited, nil
 	}
-	putBanner := banner.BannerPutPostRequest{
+	putBanner := banner.BannerPutPostCriteria{
 		TagIds:    newPutBanner.TagId,
 		FeatureId: newPutBanner.FeatureId,
 		Content:   string(someString[:]),
@@ -212,7 +212,7 @@ func (b *BannerService) DeleteBanner(newDeleteBanner BannerEntity, user User) (b
 		return bannerExists, accessPermited, nil
 	}
 
-	deleteBanner := banner.BannerPutPostRequest{
+	deleteBanner := banner.BannerPutPostCriteria{
 		ID: newDeleteBanner.ID,
 	}
 
@@ -221,18 +221,19 @@ func (b *BannerService) DeleteBanner(newDeleteBanner BannerEntity, user User) (b
 	return bannerExists, accessPermited, err
 }
 
-func (b *BannerService) createBannerEntity(bannerList []banner.BannerResponse) ([]BannerEntity, error) {
+func (b *BannerService) createBannerEntity(bannerList []banner.BannerEntitySql) ([]BannerEntity, error) {
 
 	var bannerEntityList []BannerEntity
 	for _, b := range bannerList {
-		bannerEntity := BannerEntity{
-			ID:        b.ID,
-			TagId:     b.TagId,
-			FeatureId: b.FeatureId,
-			IsActive:  &b.IsActive,
-			CreatedAt: b.CreatedAt,
-			UpdatedAt: b.UpdatedAt,
-		}
+		var bannerEntity BannerEntity
+		isActive := b.IsActive
+		bannerEntity.ID = b.ID
+		bannerEntity.TagId = b.TagId
+		bannerEntity.FeatureId = b.FeatureId
+		bannerEntity.IsActive = &isActive
+		bannerEntity.CreatedAt = b.CreatedAt
+		bannerEntity.UpdatedAt = b.UpdatedAt
+
 		err := json.Unmarshal([]byte(b.Content), &bannerEntity.Content)
 
 		if err != nil {
