@@ -2,12 +2,17 @@ package banner
 
 import "time"
 
-type BannerCriteria struct {
+type GetUserBannerCriteria struct {
 	TagId           int
 	FeatureId       int
 	UseLastRevision bool
-	Limit           int
-	Offset          int
+}
+
+type GetBannersListCriteria struct {
+	TagId     int
+	FeatureId int
+	Limit     int
+	Offset    int
 }
 
 type BannerEntitySql struct {

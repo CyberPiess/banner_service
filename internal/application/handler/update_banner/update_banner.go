@@ -26,15 +26,11 @@ func NewPutBannerHandler(service putBannerService) *PutBanner {
 	return &PutBanner{service: service}
 }
 
-type ErrorBody struct {
-	Error string `json:"error"`
-}
-
 func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
-	var putBanner banner.BannerEntity
+	var dataFromPath UpdateBannerDTO
 	var err error
 	bannerID := mux.Vars(r)["id"]
-	putBanner.ID, err = strconv.Atoi(bannerID)
+	dataFromPath.ID, err = strconv.Atoi(bannerID)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -46,7 +42,7 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewDecoder(r.Body).Decode(&putBanner)
+	err = json.NewDecoder(r.Body).Decode(&dataFromPath)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -66,7 +62,8 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, accessPermited, err := ptB.service.PutBanner(putBanner, user)
+	updateBanner := createEntityFromDTO(dataFromPath)
+	found, accessPermited, err := ptB.service.PutBanner(updateBanner, user)
 	switch {
 	case err != nil:
 		response := ErrorBody{

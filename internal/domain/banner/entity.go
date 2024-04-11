@@ -4,10 +4,10 @@ import "time"
 
 type BannerEntity struct {
 	ID        int
-	Content   map[string]interface{} `json:"content"`
-	TagId     []int                  `json:"tag_ids"`
-	FeatureId int                    `json:"feature_id"`
-	IsActive  *bool                  `json:"is_active"`
+	Content   map[string]interface{}
+	TagId     []int
+	FeatureId int
+	IsActive  *bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

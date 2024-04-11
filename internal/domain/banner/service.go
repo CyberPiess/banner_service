@@ -1,3 +1,4 @@
+//go:generate mockgen -source=service.go -destination=mocks/mock.go
 package banner
 
 import (
@@ -11,12 +12,12 @@ import (
 )
 
 type bannerStorage interface {
-	Get(bannerRequest banner.BannerCriteria) ([]banner.BannerEntitySql, error)
+	Get(bannerParams banner.GetUserBannerCriteria) ([]banner.BannerEntitySql, error)
 	IfTokenValid(token string) (bool, error)
 	IfBannerExists(featureId int, tagId int) (bool, error)
 	IfAdminTokenValid(token string) (bool, error)
 	SearchBannerByID(bannerID int) (bool, error)
-	GetAllBanners(bannerParams banner.BannerCriteria) ([]banner.BannerEntitySql, error)
+	GetAllBanners(bannerParams banner.GetBannersListCriteria) ([]banner.BannerEntitySql, error)
 	PostBanner(postBannerParams banner.BannerPutPostCriteria) (int, error)
 	PutBanner(putBannerParams banner.BannerPutPostCriteria) error
 	DeleteBanner(deleteBannerParams banner.BannerPutPostCriteria) error
@@ -47,7 +48,7 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 		return BannerEntity{}, validToken, nil
 	}
 	cacheKey := fmt.Sprintf("tag_id=%d&feature_id=%d", bannerFilter.TagId, bannerFilter.FeatureId)
-	//ToDo: Check attentively
+
 	if !bannerFilter.UseLastRevision {
 		foundInCahce, err := b.redis.GetFromCache(cacheKey)
 		if err != nil {
@@ -71,13 +72,13 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 		return BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest := banner.BannerCriteria{
+	bannerParams := banner.GetUserBannerCriteria{
 		TagId:           bannerFilter.TagId,
 		FeatureId:       bannerFilter.FeatureId,
 		UseLastRevision: bannerFilter.UseLastRevision,
 	}
 
-	banner, err := b.store.Get(bannerRequest)
+	banner, err := b.store.Get(bannerParams)
 	if err != nil {
 		return BannerEntity{}, validToken, err
 	}
@@ -108,7 +109,7 @@ func (b *BannerService) SearchAllBanners(bannerFilter GetAllFilter, user User) (
 		return []BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest := banner.BannerCriteria{
+	bannerRequest := banner.GetBannersListCriteria{
 		TagId:     bannerFilter.TagId,
 		FeatureId: bannerFilter.FeatureId,
 		Limit:     bannerFilter.Limit,
@@ -190,7 +191,6 @@ func (b *BannerService) PutBanner(newPutBanner BannerEntity, user User) (bool, b
 	}
 
 	err = b.store.PutBanner(putBanner)
-
 	return bannerExists, accessPermited, err
 }
 

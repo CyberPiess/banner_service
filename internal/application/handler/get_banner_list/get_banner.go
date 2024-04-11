@@ -4,7 +4,6 @@ package getbannerlist
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/gorilla/schema"
@@ -26,10 +25,6 @@ func NewGetAllBannersHandler(service bannerService) *Banner {
 	return &Banner{service: service}
 }
 
-type ErrorBody struct {
-	Error string `json:"error"`
-}
-
 func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 
 	var decoder = schema.NewDecoder()
@@ -46,8 +41,8 @@ func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bannerFilter banner.GetAllFilter
-	err = decoder.Decode(&bannerFilter, r.Form)
+	var dataFromQuery GetAllBannersDTO
+	err = decoder.Decode(&dataFromQuery, r.Form)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -67,7 +62,9 @@ func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundBanners, accessPermited, err := b.service.SearchAllBanners(bannerFilter, user)
+	allBannersFilter := createAllBannersFilterFromDTO(dataFromQuery)
+
+	foundBanners, accessPermited, err := b.service.SearchAllBanners(allBannersFilter, user)
 	switch {
 	case err != nil:
 		response := ErrorBody{
@@ -84,7 +81,7 @@ func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 
-	jsonContent, err := b.createFromEntity(foundBanners)
+	jsonContent, err := createFromEntity(foundBanners)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -99,38 +96,4 @@ func (b *Banner) GetAllBanners(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonContent)
-}
-
-func (b *Banner) createFromEntity(entityList []banner.BannerEntity) ([]byte, error) {
-	type response struct {
-		ID        int                    `json:"banner_id"`
-		TagId     []int                  `json:"tag_ids"`
-		FeatureId int                    `json:"feature_id"`
-		Content   map[string]interface{} `json:"content"`
-		IsActive  bool                   `json:"is_active"`
-		CreatedAt time.Time              `json:"created_at"`
-		UpdatedAt time.Time              `json:"updated_at"`
-	}
-
-	var result []response
-	for _, entity := range entityList {
-		partOfSlice := response{ID: entity.ID,
-			Content:   entity.Content,
-			TagId:     entity.TagId,
-			FeatureId: entity.FeatureId,
-			IsActive:  *entity.IsActive,
-			CreatedAt: entity.CreatedAt,
-			UpdatedAt: entity.UpdatedAt}
-		result = append(result, partOfSlice)
-	}
-
-	if len(result) == 0 {
-		return []byte("[]"), nil
-	}
-
-	jsonContent, err := json.Marshal(result)
-	if err != nil {
-		return nil, err
-	}
-	return jsonContent, nil
 }

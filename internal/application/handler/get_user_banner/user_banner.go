@@ -25,10 +25,6 @@ func NewBannerHandler(service bannerService) *Banner {
 	return &Banner{service: service}
 }
 
-type ErrorBody struct {
-	Error string `json:"error"`
-}
-
 func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 	var decoder = schema.NewDecoder()
 
@@ -44,8 +40,8 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bannerFilter banner.GetFilter
-	err = decoder.Decode(&bannerFilter, r.Form)
+	var dataFromQuery GetUserBannerDTO
+	err = decoder.Decode(&dataFromQuery, r.Form)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -64,6 +60,8 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	bannerFilter := createFilterFromDTO(dataFromQuery)
 
 	newBanner, accessPermited, err := b.service.SearchBanner(bannerFilter, user)
 	switch {
@@ -85,7 +83,7 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 
-	jsonContent, err := b.createFromEntity(newBanner)
+	jsonContent, err := createFromEntity(newBanner)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -100,12 +98,4 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonContent)
-}
-
-func (b *Banner) createFromEntity(entity banner.BannerEntity) ([]byte, error) {
-	jsonContent, err := json.Marshal(entity.Content)
-	if err != nil {
-		return nil, err
-	}
-	return jsonContent, nil
 }

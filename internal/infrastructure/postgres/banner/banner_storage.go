@@ -1,3 +1,4 @@
+//go:generate mockgen -source=banner_storage.go -destination=mocks/mock.go
 package banner
 
 import (
@@ -15,7 +16,7 @@ func NewBannerRepository(db *sql.DB) *BannerRepository {
 	return &BannerRepository{db: db}
 }
 
-func (bn *BannerRepository) Get(bannerParams BannerCriteria) ([]BannerEntitySql, error) {
+func (bn *BannerRepository) Get(bannerParams GetUserBannerCriteria) ([]BannerEntitySql, error) {
 	var banner BannerEntitySql
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -37,7 +38,7 @@ func (bn *BannerRepository) Get(bannerParams BannerCriteria) ([]BannerEntitySql,
 	return []BannerEntitySql{banner}, nil
 }
 
-func (bn *BannerRepository) GetAllBanners(bannerParams BannerCriteria) ([]BannerEntitySql, error) {
+func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) ([]BannerEntitySql, error) {
 
 	var bannerResultSlice []BannerEntitySql
 	var bannersQuery string

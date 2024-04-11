@@ -1,9 +1,9 @@
 package banner
 
 type GetFilter struct {
-	TagId           int  `schema:"tag_id,required"`
-	FeatureId       int  `schema:"feature_id,required"`
-	UseLastRevision bool `schema:"use_last_revision,default:false"`
+	TagId           int
+	FeatureId       int
+	UseLastRevision bool
 }
 
 type GetAllFilter struct {

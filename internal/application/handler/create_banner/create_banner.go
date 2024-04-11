@@ -25,13 +25,9 @@ func NewPostBannerHandler(service postBannerService) *PostBanner {
 	return &PostBanner{service: service}
 }
 
-type ErrorBody struct {
-	Error string `json:"error"`
-}
-
 func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
-	var postBanner banner.BannerEntity
-	err := json.NewDecoder(r.Body).Decode(&postBanner)
+	var dataFromBody CreateDTO
+	err := json.NewDecoder(r.Body).Decode(&dataFromBody)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -43,7 +39,7 @@ func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = pb.verifyData(postBanner)
+	err = pb.verifyData(dataFromBody)
 	if err != nil {
 		response := ErrorBody{
 			Error: err.Error(),
@@ -61,6 +57,8 @@ func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	postBanner := createEntityFromDTO(dataFromBody)
 
 	createdID, accessPermited, err := pb.service.PostBanner(postBanner, user)
 	switch {
@@ -93,7 +91,7 @@ func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonContent)
 }
 
-func (pb *PostBanner) verifyData(postBanner banner.BannerEntity) error {
+func (pb *PostBanner) verifyData(postBanner CreateDTO) error {
 	if len(postBanner.TagId) == 0 {
 		return fmt.Errorf("tag_ids is empty")
 	}

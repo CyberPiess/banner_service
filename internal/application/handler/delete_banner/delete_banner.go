@@ -26,16 +26,12 @@ func NewDeleteBannerHandler(service deleteBannerService) *DeleteBanner {
 	return &DeleteBanner{service: service}
 }
 
-type ErrorBody struct {
-	Error string `json:"error"`
-}
-
 func (dB *DeleteBanner) DeleteBanner(w http.ResponseWriter, r *http.Request) {
-	var deleteBanner banner.BannerEntity
+	var bannerFromPath BannerDeleteDTO
 	var err error
 	var response ErrorBody
 	bannerID := mux.Vars(r)["id"]
-	deleteBanner.ID, err = strconv.Atoi(bannerID)
+	bannerFromPath.ID, err = strconv.Atoi(bannerID)
 	if err != nil {
 		response.Error = err.Error()
 		responseBody, _ := json.Marshal(response)
@@ -52,7 +48,9 @@ func (dB *DeleteBanner) DeleteBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, accessPermited, err := dB.service.DeleteBanner(deleteBanner, user)
+	bannerForDelete := createEntityFromDTO(bannerFromPath)
+
+	found, accessPermited, err := dB.service.DeleteBanner(bannerForDelete, user)
 	switch {
 	case err != nil:
 		response.Error = err.Error()
