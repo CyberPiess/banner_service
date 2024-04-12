@@ -60,7 +60,7 @@ func TestIntegrationGetUserBanner(t *testing.T) {
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodGet,
-					"http://localhost:8080/user_banner?tag_id=1&feature_id=1", nil),
+					"http://localhost:8080/user_banner?tag_id=3&feature_id=1", nil),
 				token: "user_token"},
 			want: 200,
 			body: `{"text":"some_text","title":"some_title","url":"some_url"}`,

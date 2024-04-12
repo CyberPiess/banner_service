@@ -33,15 +33,18 @@ func TestSearchBanner(t *testing.T) {
 
 	isActive := false
 
-	mockBannerStorage.EXPECT().IfTokenValid(gomock.Any()).Return(true, nil).Times(6)
-	mockBannerCache.EXPECT().GetFromCache(gomock.Any()).Return(redis.RedisEntity{Content: ``}, fmt.Errorf("nil error")).Times(5)
+	mockBannerStorage.EXPECT().IfTokenValid(gomock.Any()).Return(true, nil).Times(7)
+	mockBannerCache.EXPECT().IfCacheExists(gomock.Any()).Return(int64(0), nil).Times(6)
 	mockBannerStorage.EXPECT().IfBannerExists(gomock.Any(), gomock.Any()).Return(true, nil).Times(3)
 	mockBannerStorage.EXPECT().Get(gomock.Any()).Return(bannerSQL, nil).Times(2)
 	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(nil)
 	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(fmt.Errorf("some error"))
 	mockBannerStorage.EXPECT().Get(gomock.Any()).Return([]banner.BannerEntitySql{}, fmt.Errorf("some error"))
-	mockBannerStorage.EXPECT().IfBannerExists(gomock.Any(), gomock.Any()).Return(false, nil)
+	mockBannerStorage.EXPECT().IfBannerExists(gomock.Any(), gomock.Any()).Return(false, nil).Times(2)
+	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(nil)
+	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(fmt.Errorf("redis_error"))
 	mockBannerStorage.EXPECT().IfBannerExists(gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("some error"))
+	mockBannerCache.EXPECT().IfCacheExists(gomock.Any()).Return(int64(1), nil)
 	mockBannerCache.EXPECT().GetFromCache(gomock.Any()).Return(redis.RedisEntity{Content: `{"some_string":"somestring"}`}, nil)
 	mockBannerStorage.EXPECT().IfTokenValid(gomock.Any()).Return(false, nil)
 	mockBannerStorage.EXPECT().IfTokenValid(gomock.Any()).Return(false, fmt.Errorf("some error"))
@@ -94,6 +97,17 @@ func TestSearchBanner(t *testing.T) {
 					FeatureId: 1},
 			},
 			wantError:  nil,
+			wantBanner: BannerEntity{},
+			wantToken:  true,
+		},
+		{
+			name: "Error adding to cahce",
+			args: argsForUserGetBanner{
+				user: User{Token: "some_token"},
+				banberFilter: GetFilter{TagId: 1,
+					FeatureId: 1},
+			},
+			wantError:  fmt.Errorf("redis_error"),
 			wantBanner: BannerEntity{},
 			wantToken:  true,
 		},

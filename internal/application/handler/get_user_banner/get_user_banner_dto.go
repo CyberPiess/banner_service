@@ -16,14 +16,26 @@ type ErrorBody struct {
 	Error string `json:"error"`
 }
 
+type ResponseBody struct {
+	Content string `json:"content"`
+}
+
 func createFilterFromDTO(dataFromSchema GetUserBannerDTO) banner.GetFilter {
-	return banner.GetFilter{TagId: dataFromSchema.TagId,
+	return banner.GetFilter{
+		TagId:           dataFromSchema.TagId,
 		FeatureId:       dataFromSchema.FeatureId,
 		UseLastRevision: dataFromSchema.UseLastRevision}
 }
 
+type responseBody struct {
+	Content map[string]interface{} `json:"content"`
+}
+
 func createFromEntity(entity banner.BannerEntity) ([]byte, error) {
-	jsonContent, err := json.Marshal(entity.Content)
+	responseBody := responseBody{
+		Content: entity.Content,
+	}
+	jsonContent, err := json.Marshal(responseBody.Content)
 	if err != nil {
 		return nil, err
 	}

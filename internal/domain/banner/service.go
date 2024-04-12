@@ -25,6 +25,7 @@ type bannerStorage interface {
 
 type redisCache interface {
 	AddToCache(key string, redisDTO redis.RedisEntity) error
+	IfCacheExists(key string) (int64, error)
 	GetFromCache(key string) (redis.RedisEntity, error)
 	DeleteFromCache(key string) error
 }
@@ -47,21 +48,30 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 	if !validToken {
 		return BannerEntity{}, validToken, nil
 	}
-	cacheKey := fmt.Sprintf("tag_id=%d&feature_id=%d", bannerFilter.TagId, bannerFilter.FeatureId)
+	cacheKey := b.createCacheKey(bannerFilter.TagId, bannerFilter.FeatureId)
 
 	if !bannerFilter.UseLastRevision {
-		foundInCahce, err := b.redis.GetFromCache(cacheKey)
+
+		exists, err := b.redis.IfCacheExists(cacheKey)
 		if err != nil {
-			log.Printf("error redis: %s", err.Error())
+			return BannerEntity{}, validToken, err
 		}
-		if foundInCahce.Content != "" {
+
+		if exists == 1 {
 			var bannerEntity BannerEntity
-			err := json.Unmarshal([]byte(foundInCahce.Content), &bannerEntity.Content)
+			foundInCahce, err := b.redis.GetFromCache(cacheKey)
 			if err != nil {
 				return BannerEntity{}, validToken, err
 			}
+			if foundInCahce.Content != "" {
+				err := json.Unmarshal([]byte(foundInCahce.Content), &bannerEntity.Content)
+				if err != nil {
+					return BannerEntity{}, validToken, err
+				}
+			}
 			return bannerEntity, validToken, err
 		}
+
 	}
 
 	bannerExists, err := b.store.IfBannerExists(bannerFilter.TagId, bannerFilter.FeatureId)
@@ -69,13 +79,16 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 		return BannerEntity{}, validToken, err
 	}
 	if !bannerExists {
+		err = b.redis.AddToCache(cacheKey, redis.RedisEntity{Content: ""})
+		if err != nil {
+			return BannerEntity{}, validToken, err
+		}
 		return BannerEntity{}, validToken, nil
 	}
 
 	bannerParams := banner.GetUserBannerCriteria{
-		TagId:           bannerFilter.TagId,
-		FeatureId:       bannerFilter.FeatureId,
-		UseLastRevision: bannerFilter.UseLastRevision,
+		TagId:     bannerFilter.TagId,
+		FeatureId: bannerFilter.FeatureId,
 	}
 
 	banner, err := b.store.Get(bannerParams)
@@ -244,4 +257,8 @@ func (b *BannerService) createBannerEntity(bannerList []banner.BannerEntitySql) 
 	}
 
 	return bannerEntityList, nil
+}
+
+func (b *BannerService) createCacheKey(tagID int, featureID int) string {
+	return fmt.Sprintf("tag_id=%d&feature_id=%d", tagID, featureID)
 }

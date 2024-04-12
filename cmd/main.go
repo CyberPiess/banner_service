@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	createBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/create_banner"
 	deleteBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/delete_banner"
@@ -15,6 +14,7 @@ import (
 	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
 	"github.com/gorilla/mux"
 
+	"github.com/CyberPiess/banner_sevice/internal/infrastructure/logging"
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
 	bannerStorage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
 	"github.com/CyberPiess/banner_sevice/internal/infrastructure/redis"
@@ -25,11 +25,20 @@ import (
 
 func main() {
 
-	currentDir, _ := os.Getwd()
-	envFilePath := filepath.Join(currentDir, "..", "build\\.env")
-	err := godotenv.Load(envFilePath)
+	logger, err := logging.NewLog(logging.Config{
+		LogLevel: "info",
+		LogFile:  "logrus.log",
+	})
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error starting log")
+	}
+
+	err = godotenv.Load()
+	if err != nil {
+		logger.Fatal("Error loading .env file")
+	}
+	if err != nil {
+		logger.Fatal("Error loading .env file")
 	}
 
 	mux := mux.NewRouter()
@@ -43,7 +52,7 @@ func main() {
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 	})
 	if err != nil {
-		log.Fatalf("failed to initialize db: %s", err.Error())
+		logger.Fatalf("failed to initialize db: %s", err.Error())
 	}
 	defer db.Close()
 
@@ -53,7 +62,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("failed to initialize redis: %s", err.Error())
+		logger.Fatalf("failed to initialize redis: %s", err.Error())
 	}
 	defer client.Close()
 
@@ -74,5 +83,5 @@ func main() {
 	mux.HandleFunc("/banner/{id}", deleteBannerHandler.DeleteBanner).Methods(http.MethodDelete)
 
 	err = http.ListenAndServe(":8080", mux)
-	log.Fatal(err)
+	logger.Fatal(err)
 }

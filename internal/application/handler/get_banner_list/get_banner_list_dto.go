@@ -27,20 +27,21 @@ type ErrorBody struct {
 	Error string `json:"error"`
 }
 
-func createFromEntity(entityList []banner.BannerEntity) ([]byte, error) {
-	type response struct {
-		ID        int                    `json:"banner_id"`
-		TagId     []int                  `json:"tag_ids"`
-		FeatureId int                    `json:"feature_id"`
-		Content   map[string]interface{} `json:"content"`
-		IsActive  bool                   `json:"is_active"`
-		CreatedAt time.Time              `json:"created_at"`
-		UpdatedAt time.Time              `json:"updated_at"`
-	}
+type responseBody struct {
+	ID        int                    `json:"banner_id"`
+	TagId     []int                  `json:"tag_ids"`
+	FeatureId int                    `json:"feature_id"`
+	Content   map[string]interface{} `json:"content"`
+	IsActive  bool                   `json:"is_active"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
+}
 
-	var result []response
+func createFromEntity(entityList []banner.BannerEntity) ([]byte, error) {
+
+	var result []responseBody
 	for _, entity := range entityList {
-		partOfSlice := response{ID: entity.ID,
+		partOfSlice := responseBody{ID: entity.ID,
 			Content:   entity.Content,
 			TagId:     entity.TagId,
 			FeatureId: entity.FeatureId,

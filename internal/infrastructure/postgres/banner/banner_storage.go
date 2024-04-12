@@ -60,14 +60,14 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 	bannersQuery, args, err = searchBannersID.ToSql()
 
 	if err != nil {
-		return bannerResultSlice, err
+		return []BannerEntitySql{}, err
 	}
 
 	var bannerID int
 	var bannerIDSlice []int
 	foundID, err := bn.db.Query(bannersQuery, args...)
 	if err != nil {
-		return bannerResultSlice, err
+		return []BannerEntitySql{}, err
 	}
 	defer foundID.Close()
 	for foundID.Next() {
@@ -92,11 +92,11 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 
 	fetchAllBannersQuery, args, err := selectAllBanners.ToSql()
 	if err != nil {
-		return bannerResultSlice, err
+		return []BannerEntitySql{}, err
 	}
 	bannerRows, err := bn.db.Query(fetchAllBannersQuery, args...)
 	if err != nil {
-		return bannerResultSlice, err
+		return []BannerEntitySql{}, err
 	}
 	defer bannerRows.Close()
 
@@ -110,7 +110,7 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 			banner.UpdatedAt = updateTime.Time
 		}
 		if err != nil {
-			return bannerResultSlice, err
+			return []BannerEntitySql{}, err
 		}
 		selTags, args, err := psql.Select("tag_id").From("tags").Where("banner_id = ?", banner.ID).ToSql()
 		if err != nil {

@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     env_file:
-      - .env
+      - ../.env
     volumes:
       - local_pgdata:/var/lib/postgres/data
 
@@ -21,8 +21,6 @@ services:
     ports:
       - '6379:6379'
     command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
-    env_file:
-      - .env
     volumes: 
       - cache:/data
 

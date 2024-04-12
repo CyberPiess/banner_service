@@ -3,9 +3,8 @@ package banner
 import "time"
 
 type GetUserBannerCriteria struct {
-	TagId           int
-	FeatureId       int
-	UseLastRevision bool
+	TagId     int
+	FeatureId int
 }
 
 type GetBannersListCriteria struct {

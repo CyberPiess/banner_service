@@ -233,3 +233,18 @@ func (mr *MockredisCacheMockRecorder) GetFromCache(key interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFromCache", reflect.TypeOf((*MockredisCache)(nil).GetFromCache), key)
 }
+
+// IfCacheExists mocks base method.
+func (m *MockredisCache) IfCacheExists(key string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IfCacheExists", key)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IfCacheExists indicates an expected call of IfCacheExists.
+func (mr *MockredisCacheMockRecorder) IfCacheExists(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IfCacheExists", reflect.TypeOf((*MockredisCache)(nil).IfCacheExists), key)
+}

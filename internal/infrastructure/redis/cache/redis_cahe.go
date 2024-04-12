@@ -14,6 +14,13 @@ func NewBannerCache(client *redis.Client) *RedisCache {
 	return &RedisCache{client: client}
 }
 
+func (rc *RedisCache) IfCacheExists(key string) (int64, error) {
+
+	result, err := rc.client.Exists(key).Result()
+
+	return result, err
+}
+
 func (rc *RedisCache) AddToCache(key string, redisDTO RedisEntity) error {
 
 	_, err := rc.client.Set(key, redisDTO.Content, time.Minute*5).Result()
