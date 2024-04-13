@@ -5,27 +5,27 @@ import (
 	"net/http"
 	"os"
 
-	createBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/create_banner"
-	deleteBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/delete_banner"
-	getBannerList "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner_list"
-	getUserBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
-	updateBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/update_banner"
+	createBanner "github.com/CyberPiess/banner_service/internal/application/handler/create_banner"
+	deleteBanner "github.com/CyberPiess/banner_service/internal/application/handler/delete_banner"
+	getBannerList "github.com/CyberPiess/banner_service/internal/application/handler/get_banner_list"
+	getUserBanner "github.com/CyberPiess/banner_service/internal/application/handler/get_user_banner"
+	updateBanner "github.com/CyberPiess/banner_service/internal/application/handler/update_banner"
 
-	bannerService "github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 	"github.com/gorilla/mux"
 
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/logging"
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
-	bannerStorage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/redis"
-	redisCache "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/postgres"
+	bannerStorage "github.com/CyberPiess/banner_service/internal/infrastructure/postgres/banner"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/redis"
+	redisCache "github.com/CyberPiess/banner_service/internal/infrastructure/redis/cache"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
 
-	logger, err := logging.NewLog(logging.Config{
+	logger, err := logging.LoggerCreate(logging.Config{
 		LogLevel: "info",
 		LogFile:  "logrus.log",
 	})
@@ -66,15 +66,15 @@ func main() {
 	}
 	defer client.Close()
 
-	bannerStore := bannerStorage.NewBannerRepository(db)
-	redisCache := redisCache.NewBannerCache(client)
-	bannerService := bannerService.NewBannerService(bannerStore, redisCache)
+	bannerStore := bannerStorage.NewBannerRepository(db, logger)
+	redisCache := redisCache.NewBannerCache(client, logger)
+	bannerService := bannerService.NewBannerService(bannerStore, redisCache, logger)
 
-	userBannerHandler := getUserBanner.NewBannerHandler(bannerService)
-	adminBannerHandler := getBannerList.NewGetAllBannersHandler(bannerService)
-	postBannerHandler := createBanner.NewPostBannerHandler(bannerService)
-	putBannerHandler := updateBanner.NewPutBannerHandler(bannerService)
-	deleteBannerHandler := deleteBanner.NewDeleteBannerHandler(bannerService)
+	userBannerHandler := getUserBanner.NewBannerHandler(bannerService, logger)
+	adminBannerHandler := getBannerList.NewGetAllBannersHandler(bannerService, logger)
+	postBannerHandler := createBanner.NewPostBannerHandler(bannerService, logger)
+	putBannerHandler := updateBanner.NewPutBannerHandler(bannerService, logger)
+	deleteBannerHandler := deleteBanner.NewDeleteBannerHandler(bannerService, logger)
 
 	mux.HandleFunc("/user_banner", userBannerHandler.GetUserBanner).Methods(http.MethodGet)
 	mux.HandleFunc("/banner", adminBannerHandler.GetAllBanners).Methods(http.MethodGet)

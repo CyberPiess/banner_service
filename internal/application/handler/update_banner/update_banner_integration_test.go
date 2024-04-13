@@ -1,4 +1,4 @@
-package delete_banner_test
+package update_banner_test
 
 import (
 	"database/sql"
@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
-	deleteBanner "github.com/CyberPiess/banner_service/internal/application/handler/delete_banner"
-	banner_service "github.com/CyberPiess/banner_service/internal/domain/banner"
+	updateBanner "github.com/CyberPiess/banner_service/internal/application/handler/update_banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/CyberPiess/banner_service/internal/infrastructure/postgres"
 	storage "github.com/CyberPiess/banner_service/internal/infrastructure/postgres/banner"
@@ -18,7 +19,6 @@ import (
 	bannerCache "github.com/CyberPiess/banner_service/internal/infrastructure/redis/cache"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,19 +42,22 @@ type args struct {
 	id    string
 }
 
-func TestIntegrationDeleteBanner(t *testing.T) {
+func TestIntegrationUpdateBanner(t *testing.T) {
 
 	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
-		LogFile: "delete_banner_integration_test.log"})
+		LogFile: "update_banner_integration_test.log"})
 	if err != nil {
 		log.Fatal("error init logger")
 	}
 
 	bannerStore := storage.NewBannerRepository(testDbInstance, logger)
 	bannerCache := bannerCache.NewBannerCache(testRedisInstance, logger)
-	bannerService := banner_service.NewBannerService(bannerStore, bannerCache, logger)
+	bannerService := bannerService.NewBannerService(bannerStore, bannerCache, logger)
+	updateBannerHandler := updateBanner.NewPutBannerHandler(bannerService, logger)
 
-	deleteBannerHandler := deleteBanner.NewDeleteBannerHandler(bannerService, logger)
+	validRequestBody := "{ \"tag_ids\": [81, 93, 54], \"feature_id\": 55, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
+	validBody := strings.NewReader(validRequestBody)
+	validBody2 := strings.NewReader(validRequestBody)
 
 	tests := []struct {
 		name string
@@ -63,37 +66,28 @@ func TestIntegrationDeleteBanner(t *testing.T) {
 		body string
 	}{
 		{
-			name: "Correct request",
+			name: "Access denied",
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodDelete,
-					"http://localhost:8080/banner/{id}", nil),
+					"http://localhost:8080/banner/{id}", validBody),
 				token: "admin_token",
-				id:    "1"},
-			want: 204,
-			body: "",
+				id:    "1",
+			},
+			want: 200,
+			body: ``,
 		},
 		{
-			name: "Not Found",
+			name: "Access denied",
 			args: args{w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodDelete,
-					"http://localhost:8080/banner/{id}", nil),
-				token: "admin_token",
-				id:    "1"},
-			want: 404,
-			body: "",
-		},
-		{
-			name: "User Token",
-			args: args{w: httptest.NewRecorder(),
-				r: httptest.NewRequest(
-					http.MethodDelete,
-					"http://localhost:8080/banner/{id}", nil),
+					"http://localhost:8080/banner/{id}", validBody2),
 				token: "user_token",
-				id:    "1"},
+				id:    "1",
+			},
 			want: 403,
-			body: "",
+			body: ``,
 		},
 	}
 
@@ -102,7 +96,7 @@ func TestIntegrationDeleteBanner(t *testing.T) {
 		req := tt.args.r
 		req.Header.Set("token", tt.args.token)
 		req = mux.SetURLVars(req, map[string]string{"id": tt.args.id})
-		deleteBannerHandler.DeleteBanner(w, req)
+		updateBannerHandler.PutBanner(w, req)
 		data, err := io.ReadAll(w.Body)
 
 		require.NoError(t, err)

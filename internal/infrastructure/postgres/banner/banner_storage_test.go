@@ -1,31 +1,34 @@
-package banner
+package banner_storage
 
 import (
 	"database/sql"
 	"log"
 	"testing"
 
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/assert"
 )
-
-// 	PostBanner(postBannerParams banner.BannerPutPostCriteria) (int, error)
-// 	PutBanner(putBannerParams banner.BannerPutPostCriteria) error
-// 	DeleteBanner(deleteBannerParams banner.BannerPutPostCriteria) error
 
 type GetUserBannerArgs struct {
 	getUserBannerParams GetUserBannerCriteria
 }
 
 func TestGet(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
-		log.Fatal("error init mock", err)
+		logger.Fatal("error init mock", err)
 	}
 	defer db.Close()
 
-	bannerStorage := NewBannerRepository(db)
+	bannerStorage := NewBannerRepository(db, logger)
 
 	getUserBannerParams := GetUserBannerCriteria{
 		TagId:     1,
@@ -86,13 +89,19 @@ func TestGet(t *testing.T) {
 	}
 }
 func TestIfTokenValid(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
-		log.Fatal("error init mock", err)
+		logger.Fatal("error init mock", err)
 	}
 	defer db.Close()
 
-	bannerStorage := NewBannerRepository(db)
+	bannerStorage := NewBannerRepository(db, logger)
 
 	tokenString := "tokenString"
 
@@ -136,13 +145,19 @@ func TestIfTokenValid(t *testing.T) {
 }
 
 func TestIfAdminTokenValid(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
-		log.Fatal("error init mock", err)
+		logger.Fatal("error init mock", err)
 	}
 	defer db.Close()
 
-	bannerStorage := NewBannerRepository(db)
+	bannerStorage := NewBannerRepository(db, logger)
 
 	tokenString := "tokenString"
 
@@ -186,13 +201,19 @@ func TestIfAdminTokenValid(t *testing.T) {
 }
 
 func TestIfBannerExists(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
-		log.Fatal("error init mock", err)
+		logger.Fatal("error init mock", err)
 	}
 	defer db.Close()
 
-	bannerStorage := NewBannerRepository(db)
+	bannerStorage := NewBannerRepository(db, logger)
 
 	ifBannerExistParams := GetUserBannerCriteria{
 		TagId:     1,
@@ -251,13 +272,19 @@ func TestIfBannerExists(t *testing.T) {
 }
 
 func TestSearchBannerById(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
-		log.Fatal("error init mock", err)
+		logger.Fatal("error init mock", err)
 	}
 	defer db.Close()
 
-	bannerStorage := NewBannerRepository(db)
+	bannerStorage := NewBannerRepository(db, logger)
 
 	bannerID := 1
 
@@ -301,13 +328,19 @@ func TestSearchBannerById(t *testing.T) {
 	}
 }
 func TestGetAllBanners(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
-		log.Fatal("error init mock", err)
+		logger.Fatal("error init mock", err)
 	}
 	defer db.Close()
 
-	bannerStorage := NewBannerRepository(db)
+	bannerStorage := NewBannerRepository(db, logger)
 
 	selectBannerIDs := GetBannersListCriteria{
 		TagId:     1,

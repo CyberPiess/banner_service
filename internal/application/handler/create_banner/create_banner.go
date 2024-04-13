@@ -1,34 +1,45 @@
-//go:generate mockgen -source=post_banner.go -destination=mocks/mock.go
-package createbanner
+//go:generate mockgen -source=create_banner.go -destination=mocks/mock.go
+package create_banner
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
+	"github.com/sirupsen/logrus"
 )
 
 type postBannerService interface {
-	SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error)
-	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
-	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
-	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
-	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+	SearchBanner(bannerFilter bannerService.GetFilter, user bannerService.User) (bannerService.BannerEntity, bool, error)
+	SearchAllBanners(bannerFilter bannerService.GetAllFilter, user bannerService.User) ([]bannerService.BannerEntity, bool, error)
+	PostBanner(newPostBanner bannerService.BannerEntity, user bannerService.User) (int, bool, error)
+	PutBanner(newPutBanner bannerService.BannerEntity, user bannerService.User) (bool, bool, error)
+	DeleteBanner(newPutBanner bannerService.BannerEntity, user bannerService.User) (bool, bool, error)
+}
+
+type logger interface {
+	WithFields(fields logrus.Fields) *logrus.Entry
 }
 
 type PostBanner struct {
 	service postBannerService
+	logger  logger
 }
 
-func NewPostBannerHandler(service postBannerService) *PostBanner {
-	return &PostBanner{service: service}
+func NewPostBannerHandler(service postBannerService, logger logger) *PostBanner {
+	return &PostBanner{service: service, logger: logger}
 }
 
 func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 	var dataFromBody CreateDTO
 	err := json.NewDecoder(r.Body).Decode(&dataFromBody)
 	if err != nil {
+		pb.logger.WithFields(logrus.Fields{
+			"package":  "create_banner",
+			"function": "PostBanner",
+			"error":    err,
+		}).Warn("Error decoding body")
 		response := ErrorBody{
 			Error: err.Error(),
 		}
@@ -41,6 +52,11 @@ func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 
 	err = pb.verifyData(dataFromBody)
 	if err != nil {
+		pb.logger.WithFields(logrus.Fields{
+			"package":  "create_banner",
+			"function": "PostBanner",
+			"error":    err,
+		}).Warn("Error verifying data")
 		response := ErrorBody{
 			Error: err.Error(),
 		}
@@ -50,7 +66,7 @@ func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 		w.Write(responseBody)
 		return
 	}
-	user := banner.User{
+	user := bannerService.User{
 		Token: r.Header.Get("token"),
 	}
 	if user.Token == "" {
@@ -83,6 +99,11 @@ func (pb *PostBanner) PostBanner(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonContent, err := json.Marshal(bannerID)
 	if err != nil {
+		pb.logger.WithFields(logrus.Fields{
+			"package":  "create_banner",
+			"function": "PostBanner",
+			"error":    err,
+		}).Warn("Error marshalling content")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}

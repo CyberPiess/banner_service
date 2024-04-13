@@ -1,4 +1,4 @@
-module github.com/CyberPiess/banner_sevice
+module github.com/CyberPiess/banner_service
 
 go 1.21.5
 

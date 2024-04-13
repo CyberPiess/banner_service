@@ -1,29 +1,35 @@
-//go:generate mockgen -source=put_banner.go -destination=mocks/mock.go
-package updatebanner
+//go:generate mockgen -source=update_banner.go -destination=mocks/mock.go
+package update_banner
 
 import (
 	"encoding/json"
 	"net/http"
 	"strconv"
 
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type putBannerService interface {
-	SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error)
-	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
-	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
-	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
-	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+	SearchBanner(bannerFilter bannerService.GetFilter, user bannerService.User) (bannerService.BannerEntity, bool, error)
+	SearchAllBanners(bannerFilter bannerService.GetAllFilter, user bannerService.User) ([]bannerService.BannerEntity, bool, error)
+	PostBanner(newPostBanner bannerService.BannerEntity, user bannerService.User) (int, bool, error)
+	PutBanner(newPutBanner bannerService.BannerEntity, user bannerService.User) (bool, bool, error)
+	DeleteBanner(newPutBanner bannerService.BannerEntity, user bannerService.User) (bool, bool, error)
+}
+
+type logger interface {
+	WithFields(fields logrus.Fields) *logrus.Entry
 }
 
 type PutBanner struct {
 	service putBannerService
+	logger  logger
 }
 
-func NewPutBannerHandler(service putBannerService) *PutBanner {
-	return &PutBanner{service: service}
+func NewPutBannerHandler(service putBannerService, logger logger) *PutBanner {
+	return &PutBanner{service: service, logger: logger}
 }
 
 func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +38,12 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 	bannerID := mux.Vars(r)["id"]
 	dataFromPath.ID, err = strconv.Atoi(bannerID)
 	if err != nil {
+		ptB.logger.WithFields(logrus.Fields{
+			"package":  "update_banner",
+			"function": "PutBanner",
+			"error":    err,
+		}).Warn("Error parsing path")
+
 		response := ErrorBody{
 			Error: err.Error(),
 		}
@@ -44,6 +56,12 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&dataFromPath)
 	if err != nil {
+		ptB.logger.WithFields(logrus.Fields{
+			"package":  "update_banner",
+			"function": "PutBanner",
+			"error":    err,
+		}).Warn("Error decoding")
+
 		response := ErrorBody{
 			Error: err.Error(),
 		}
@@ -54,7 +72,7 @@ func (ptB *PutBanner) PutBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := banner.User{
+	user := bannerService.User{
 		Token: r.Header.Get("token"),
 	}
 	if user.Token == "" {

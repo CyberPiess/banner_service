@@ -1,4 +1,4 @@
-package banner
+package banner_service
 
 type GetFilter struct {
 	TagId           int

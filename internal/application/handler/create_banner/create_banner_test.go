@@ -1,13 +1,15 @@
-package createbanner
+package create_banner
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	postBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/create_banner/mocks"
+	postBanner "github.com/CyberPiess/banner_service/internal/application/handler/create_banner/mocks"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,22 +27,28 @@ func TestPostBanner(t *testing.T) {
 
 	mockBannerService := postBanner.NewMockpostBannerService(ctrl)
 
-	postBannerHandler := NewPostBannerHandler(mockBannerService)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "create_banner_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	postBannerHandler := NewPostBannerHandler(mockBannerService, logger)
 
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(1, true, nil)
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, nil)
 	mockBannerService.EXPECT().PostBanner(gomock.Any(), gomock.Any()).Return(0, false, fmt.Errorf("some error"))
 
-	validRewuestBody := "{ \"tag_ids\": [1,2,3], \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
+	validRequestBody := "{ \"tag_ids\": [1,2,3], \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
 	absentTagId := "{ \"feature_id\": 1, \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
 	absentFeatureId := "{\"tag_ids\": [1,2,3], \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}, \"is_active\": false}"
 	absentContent := "{\"tag_ids\": [1,2,3], \"feature_id\": 1, \"is_active\": false}"
 	absentIsActive := "{\"tag_ids\": [1,2,3], \"content\": {\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}}"
 
-	validBody := strings.NewReader(validRewuestBody)
-	validBody2 := strings.NewReader(validRewuestBody)
-	validBody3 := strings.NewReader(validRewuestBody)
-	validBody4 := strings.NewReader(validRewuestBody)
+	validBody := strings.NewReader(validRequestBody)
+	validBody2 := strings.NewReader(validRequestBody)
+	validBody3 := strings.NewReader(validRequestBody)
+	validBody4 := strings.NewReader(validRequestBody)
 	noTagID := strings.NewReader(absentTagId)
 	noFeatureID := strings.NewReader(absentFeatureId)
 	noContent := strings.NewReader(absentContent)

@@ -1,19 +1,21 @@
-package getbannerlist_test
+package get_banner_list_test
 
 import (
 	"database/sql"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	adminBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner_list"
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
-	storage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
-	rd "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis"
-	bannerCache "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
+	adminBanner "github.com/CyberPiess/banner_service/internal/application/handler/get_banner_list"
+	banner_service "github.com/CyberPiess/banner_service/internal/domain/banner"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/postgres"
+	storage "github.com/CyberPiess/banner_service/internal/infrastructure/postgres/banner"
+	rd "github.com/CyberPiess/banner_service/internal/infrastructure/redis"
+	bannerCache "github.com/CyberPiess/banner_service/internal/infrastructure/redis/cache"
 	"github.com/go-redis/redis"
 
 	"github.com/stretchr/testify/assert"
@@ -39,12 +41,17 @@ type args struct {
 }
 
 func TestIntegrationGetAllBanners(t *testing.T) {
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "get_banner_list_integration_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
 
-	bannerStore := storage.NewBannerRepository(testDbInstance)
-	bannerCache := bannerCache.NewBannerCache(testRedisInstance)
-	bannerService := banner.NewBannerService(bannerStore, bannerCache)
+	bannerStore := storage.NewBannerRepository(testDbInstance, logger)
+	bannerCache := bannerCache.NewBannerCache(testRedisInstance, logger)
+	bannerService := banner_service.NewBannerService(bannerStore, bannerCache, logger)
 
-	getAllBannersHandler := adminBanner.NewGetAllBannersHandler(bannerService)
+	getAllBannersHandler := adminBanner.NewGetAllBannersHandler(bannerService, logger)
 
 	responseTagIdFeatureId := `[{"banner_id":1,"tag_ids":[1,2,3],"feature_id":1,"content":{"text":"some_text","title":"some_title","url":"some_url"},"is_active":true,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`
 	responseTagId := `[{"banner_id":1,"tag_ids":[1,2,3],"feature_id":1,"content":{"text":"some_text","title":"some_title","url":"some_url"},"is_active":true,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"banner_id":3,"tag_ids":[1,2,3],"feature_id":2,"content":{"text":"some_text","title":"some_title","url":"some_url"},"is_active":false,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`

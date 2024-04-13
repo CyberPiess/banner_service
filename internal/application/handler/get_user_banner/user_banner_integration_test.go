@@ -1,19 +1,21 @@
-package userbanner_test
+package user_banner_test
 
 import (
 	"database/sql"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	userBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner"
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres"
-	storage "github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
-	rd "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis"
-	bannerCachePkg "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
+	userBanner "github.com/CyberPiess/banner_service/internal/application/handler/get_user_banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/postgres"
+	storage "github.com/CyberPiess/banner_service/internal/infrastructure/postgres/banner"
+	rd "github.com/CyberPiess/banner_service/internal/infrastructure/redis"
+	bannerCachePkg "github.com/CyberPiess/banner_service/internal/infrastructure/redis/cache"
 	"github.com/go-redis/redis"
 
 	"github.com/stretchr/testify/assert"
@@ -41,13 +43,19 @@ type args struct {
 
 func TestIntegrationGetUserBanner(t *testing.T) {
 
-	bannerStore := storage.NewBannerRepository(testDbInstance)
-	bannerCache := bannerCachePkg.NewBannerCache(testRedisInstance)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "get_user_banner_integration_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	bannerStore := storage.NewBannerRepository(testDbInstance, logger)
+	bannerCache := bannerCachePkg.NewBannerCache(testRedisInstance, logger)
 	testRedisDTO := bannerCachePkg.RedisEntity{Content: `{"title": "sometitle"}`}
 	bannerCache.AddToCache("tag_id=5&feature_id=1", testRedisDTO)
-	bannerService := banner.NewBannerService(bannerStore, bannerCache)
+	bannerService := bannerService.NewBannerService(bannerStore, bannerCache, logger)
 
-	bannerHandler := userBanner.NewBannerHandler(bannerService)
+	bannerHandler := userBanner.NewBannerHandler(bannerService, logger)
 
 	tests := []struct {
 		name string

@@ -1,28 +1,34 @@
 //go:generate mockgen -source=user_banner.go -destination=mocks/mock.go
-package userbanner
+package user_banner
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 	"github.com/gorilla/schema"
+	"github.com/sirupsen/logrus"
 )
 
-type bannerService interface {
-	SearchBanner(bannerFilter banner.GetFilter, user banner.User) (banner.BannerEntity, bool, error)
-	SearchAllBanners(bannerFilter banner.GetAllFilter, user banner.User) ([]banner.BannerEntity, bool, error)
-	PostBanner(newPostBanner banner.BannerEntity, user banner.User) (int, bool, error)
-	PutBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
-	DeleteBanner(newPutBanner banner.BannerEntity, user banner.User) (bool, bool, error)
+type getUserBannerService interface {
+	SearchBanner(bannerFilter bannerService.GetFilter, user bannerService.User) (bannerService.BannerEntity, bool, error)
+	SearchAllBanners(bannerFilter bannerService.GetAllFilter, user bannerService.User) ([]bannerService.BannerEntity, bool, error)
+	PostBanner(newPostBanner bannerService.BannerEntity, user bannerService.User) (int, bool, error)
+	PutBanner(newPutBanner bannerService.BannerEntity, user bannerService.User) (bool, bool, error)
+	DeleteBanner(newPutBanner bannerService.BannerEntity, user bannerService.User) (bool, bool, error)
+}
+
+type logger interface {
+	WithFields(fields logrus.Fields) *logrus.Entry
 }
 
 type Banner struct {
-	service bannerService
+	service getUserBannerService
+	logger  logger
 }
 
-func NewBannerHandler(service bannerService) *Banner {
-	return &Banner{service: service}
+func NewBannerHandler(service getUserBannerService, logger logger) *Banner {
+	return &Banner{service: service, logger: logger}
 }
 
 func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +36,12 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
+		b.logger.WithFields(logrus.Fields{
+			"package":  "user_banner",
+			"function": "GetUserBanners",
+			"error":    err,
+		}).Warn("Error parsing form")
+
 		response := ErrorBody{
 			Error: err.Error(),
 		}
@@ -43,6 +55,12 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 	var dataFromQuery GetUserBannerDTO
 	err = decoder.Decode(&dataFromQuery, r.Form)
 	if err != nil {
+		b.logger.WithFields(logrus.Fields{
+			"package":  "user_banner",
+			"function": "GetUserBanners",
+			"error":    err,
+		}).Warn("Error decoding")
+
 		response := ErrorBody{
 			Error: err.Error(),
 		}
@@ -53,7 +71,7 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := banner.User{
+	user := bannerService.User{
 		Token: r.Header.Get("token"),
 	}
 	if user.Token == "" {
@@ -85,6 +103,12 @@ func (b *Banner) GetUserBanner(w http.ResponseWriter, r *http.Request) {
 
 	jsonContent, err := createFromEntity(newBanner)
 	if err != nil {
+		b.logger.WithFields(logrus.Fields{
+			"package":  "user_banner",
+			"function": "GetUserBanners",
+			"error":    err,
+		}).Error("Error creating from entity")
+
 		response := ErrorBody{
 			Error: err.Error(),
 		}

@@ -1,14 +1,16 @@
-package getbannerlist
+package get_banner_list
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	getBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_banner_list/mocks"
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	getBanner "github.com/CyberPiess/banner_service/internal/application/handler/get_banner_list/mocks"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,12 +25,17 @@ func TestGetAllBanners(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockBannerService := getBanner.NewMockbannerService(ctrl)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "get_banner_list_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+	mockBannerService := getBanner.NewMockgetAllBannerService(ctrl)
 
-	bannerHandler := NewGetAllBannersHandler(mockBannerService)
+	bannerHandler := NewGetAllBannersHandler(mockBannerService, logger)
 	isActive := true
 
-	testBannerEntity := banner.BannerEntity{ID: 1,
+	testBannerEntity := bannerService.BannerEntity{ID: 1,
 		Content:   map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"},
 		TagId:     []int{1, 2, 3},
 		FeatureId: 1,
@@ -37,11 +44,11 @@ func TestGetAllBanners(t *testing.T) {
 		UpdatedAt: time.Now()}
 
 	mockBannerService.EXPECT().SearchAllBanners(gomock.Any(), gomock.Any()).
-		Return([]banner.BannerEntity{testBannerEntity}, true, nil)
+		Return([]bannerService.BannerEntity{testBannerEntity}, true, nil)
 	mockBannerService.EXPECT().SearchAllBanners(gomock.Any(), gomock.Any()).
-		Return([]banner.BannerEntity{}, false, nil)
+		Return([]bannerService.BannerEntity{}, false, nil)
 	mockBannerService.EXPECT().SearchAllBanners(gomock.Any(), gomock.Any()).
-		Return([]banner.BannerEntity{}, true, fmt.Errorf("some inner error"))
+		Return([]bannerService.BannerEntity{}, true, fmt.Errorf("some inner error"))
 
 	tests := []struct {
 		name string

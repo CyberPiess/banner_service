@@ -1,10 +1,10 @@
-package getbannerlist
+package get_banner_list
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 )
 
 type GetAllBannersDTO struct {
@@ -14,8 +14,8 @@ type GetAllBannersDTO struct {
 	Offset    int `schema:"offset"`
 }
 
-func createAllBannersFilterFromDTO(dataFromQuery GetAllBannersDTO) banner.GetAllFilter {
-	return banner.GetAllFilter{
+func createAllBannersFilterFromDTO(dataFromQuery GetAllBannersDTO) bannerService.GetAllFilter {
+	return bannerService.GetAllFilter{
 		TagId:     dataFromQuery.TagId,
 		FeatureId: dataFromQuery.FeatureId,
 		Limit:     dataFromQuery.Limit,
@@ -37,7 +37,7 @@ type responseBody struct {
 	UpdatedAt time.Time              `json:"updated_at"`
 }
 
-func createFromEntity(entityList []banner.BannerEntity) ([]byte, error) {
+func createFromEntity(entityList []bannerService.BannerEntity) ([]byte, error) {
 
 	var result []responseBody
 	for _, entity := range entityList {

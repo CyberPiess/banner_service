@@ -1,9 +1,9 @@
-package userbanner
+package user_banner
 
 import (
 	"encoding/json"
 
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 )
 
 type GetUserBannerDTO struct {
@@ -20,8 +20,8 @@ type ResponseBody struct {
 	Content string `json:"content"`
 }
 
-func createFilterFromDTO(dataFromSchema GetUserBannerDTO) banner.GetFilter {
-	return banner.GetFilter{
+func createFilterFromDTO(dataFromSchema GetUserBannerDTO) bannerService.GetFilter {
+	return bannerService.GetFilter{
 		TagId:           dataFromSchema.TagId,
 		FeatureId:       dataFromSchema.FeatureId,
 		UseLastRevision: dataFromSchema.UseLastRevision}
@@ -31,7 +31,7 @@ type responseBody struct {
 	Content map[string]interface{} `json:"content"`
 }
 
-func createFromEntity(entity banner.BannerEntity) ([]byte, error) {
+func createFromEntity(entity bannerService.BannerEntity) ([]byte, error) {
 	responseBody := responseBody{
 		Content: entity.Content,
 	}

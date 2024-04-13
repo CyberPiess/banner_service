@@ -1,13 +1,15 @@
-package updatebanner
+package update_banner
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	putBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/update_banner/mocks"
+	putBanner "github.com/CyberPiess/banner_service/internal/application/handler/update_banner/mocks"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +25,14 @@ func TestPutBanner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "update_banner_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	mockBannerService := putBanner.NewMockputBannerService(ctrl)
-	putBannerHandler := NewPutBannerHandler(mockBannerService)
+	putBannerHandler := NewPutBannerHandler(mockBannerService, logger)
 
 	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(true, true, nil)
 	mockBannerService.EXPECT().PutBanner(gomock.Any(), gomock.Any()).Return(false, false, nil)

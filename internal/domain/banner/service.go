@@ -1,43 +1,48 @@
 //go:generate mockgen -source=service.go -destination=mocks/mock.go
-package banner
+package banner_service
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
-	redis "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
+	storage "github.com/CyberPiess/banner_service/internal/infrastructure/postgres/banner"
+	redis "github.com/CyberPiess/banner_service/internal/infrastructure/redis/cache"
+	"github.com/sirupsen/logrus"
 )
 
 type bannerStorage interface {
-	Get(bannerParams banner.GetUserBannerCriteria) ([]banner.BannerEntitySql, error)
+	Get(bannerParams storage.GetUserBannerCriteria) ([]storage.BannerEntitySql, error)
 	IfTokenValid(token string) (bool, error)
 	IfBannerExists(featureId int, tagId int) (bool, error)
 	IfAdminTokenValid(token string) (bool, error)
 	SearchBannerByID(bannerID int) (bool, error)
-	GetAllBanners(bannerParams banner.GetBannersListCriteria) ([]banner.BannerEntitySql, error)
-	PostBanner(postBannerParams banner.BannerPutPostCriteria) (int, error)
-	PutBanner(putBannerParams banner.BannerPutPostCriteria) error
-	DeleteBanner(deleteBannerParams banner.BannerPutPostCriteria) error
+	GetAllBanners(bannerParams storage.GetBannersListCriteria) ([]storage.BannerEntitySql, error)
+	PostBanner(postBannerParams storage.BannerPutPostCriteria) (int, error)
+	PutBanner(putBannerParams storage.BannerPutPostCriteria) error
+	DeleteBanner(deleteBannerParams storage.BannerPutPostCriteria) error
+}
+
+type logger interface {
+	WithFields(fields logrus.Fields) *logrus.Entry
 }
 
 type redisCache interface {
 	AddToCache(key string, redisDTO redis.RedisEntity) error
 	IfCacheExists(key string) (int64, error)
 	GetFromCache(key string) (redis.RedisEntity, error)
-	DeleteFromCache(key string) error
 }
 
 type BannerService struct {
-	store bannerStorage
-	redis redisCache
+	store  bannerStorage
+	redis  redisCache
+	logger logger
 }
 
-func NewBannerService(storage bannerStorage, redis redisCache) *BannerService {
+func NewBannerService(storage bannerStorage, redis redisCache, logger logger) *BannerService {
 	return &BannerService{store: storage,
-		redis: redis}
+		redis:  redis,
+		logger: logger}
 }
 
 func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerEntity, bool, error) {
@@ -86,7 +91,7 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 		return BannerEntity{}, validToken, nil
 	}
 
-	bannerParams := banner.GetUserBannerCriteria{
+	bannerParams := storage.GetUserBannerCriteria{
 		TagId:     bannerFilter.TagId,
 		FeatureId: bannerFilter.FeatureId,
 	}
@@ -98,16 +103,26 @@ func (b *BannerService) SearchBanner(bannerFilter GetFilter, user User) (BannerE
 
 	bannerEntity, err := b.createBannerEntity(banner)
 	if err != nil {
+		b.logger.WithFields(logrus.Fields{
+			"package":  "banner_service",
+			"function": "SearchBanner",
+			"error":    err,
+		}).Error("Error unmarshalling content in createBannerEntity")
 		return BannerEntity{}, validToken, err
 	}
 
 	bannerContent, err := json.Marshal(bannerEntity[0].Content)
 	if err != nil {
-		log.Printf("error redis: %s", err.Error())
+		b.logger.WithFields(logrus.Fields{
+			"package":  "banner_service",
+			"function": "SearchBanner",
+			"error":    err,
+		}).Error("Error marshalling content")
+		return BannerEntity{}, validToken, err
 	}
 	err = b.redis.AddToCache(cacheKey, redis.RedisEntity{Content: string(bannerContent)})
 	if err != nil {
-		log.Printf("error redis: %s", err.Error())
+		return BannerEntity{}, validToken, err
 	}
 
 	return bannerEntity[0], validToken, nil
@@ -122,7 +137,7 @@ func (b *BannerService) SearchAllBanners(bannerFilter GetAllFilter, user User) (
 		return []BannerEntity{}, validToken, nil
 	}
 
-	bannerRequest := banner.GetBannersListCriteria{
+	bannerRequest := storage.GetBannersListCriteria{
 		TagId:     bannerFilter.TagId,
 		FeatureId: bannerFilter.FeatureId,
 		Limit:     bannerFilter.Limit,
@@ -153,9 +168,14 @@ func (b *BannerService) PostBanner(newPostBanner BannerEntity, user User) (int, 
 
 	someString, err := json.Marshal(newPostBanner.Content)
 	if err != nil {
+		b.logger.WithFields(logrus.Fields{
+			"package":  "banner_service",
+			"function": "PostBanner",
+			"error":    err,
+		}).Error("Error marshalling content")
 		return 0, accessPermited, err
 	}
-	postBanner := banner.BannerPutPostCriteria{
+	postBanner := storage.BannerPutPostCriteria{
 		TagIds:    newPostBanner.TagId,
 		FeatureId: newPostBanner.FeatureId,
 		Content:   string(someString[:]),
@@ -190,9 +210,14 @@ func (b *BannerService) PutBanner(newPutBanner BannerEntity, user User) (bool, b
 
 	someString, err := json.Marshal(newPutBanner.Content)
 	if err != nil {
+		b.logger.WithFields(logrus.Fields{
+			"package":  "banner_service",
+			"function": "PutBanner",
+			"error":    err,
+		}).Error("Error marshalling content")
 		return bannerExists, accessPermited, nil
 	}
-	putBanner := banner.BannerPutPostCriteria{
+	putBanner := storage.BannerPutPostCriteria{
 		TagIds:    newPutBanner.TagId,
 		FeatureId: newPutBanner.FeatureId,
 		Content:   string(someString[:]),
@@ -225,7 +250,7 @@ func (b *BannerService) DeleteBanner(newDeleteBanner BannerEntity, user User) (b
 		return bannerExists, accessPermited, nil
 	}
 
-	deleteBanner := banner.BannerPutPostCriteria{
+	deleteBanner := storage.BannerPutPostCriteria{
 		ID: newDeleteBanner.ID,
 	}
 
@@ -234,7 +259,7 @@ func (b *BannerService) DeleteBanner(newDeleteBanner BannerEntity, user User) (b
 	return bannerExists, accessPermited, err
 }
 
-func (b *BannerService) createBannerEntity(bannerList []banner.BannerEntitySql) ([]BannerEntity, error) {
+func (b *BannerService) createBannerEntity(bannerList []storage.BannerEntitySql) ([]BannerEntity, error) {
 
 	var bannerEntityList []BannerEntity
 	for _, b := range bannerList {

@@ -1,6 +1,6 @@
-package createbanner
+package create_banner
 
-import "github.com/CyberPiess/banner_sevice/internal/domain/banner"
+import bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 
 type CreateDTO struct {
 	Content   map[string]interface{} `json:"content"`
@@ -13,8 +13,8 @@ type ErrorBody struct {
 	Error string `json:"error"`
 }
 
-func createEntityFromDTO(dataFromBody CreateDTO) banner.BannerEntity {
-	return banner.BannerEntity{
+func createEntityFromDTO(dataFromBody CreateDTO) bannerService.BannerEntity {
+	return bannerService.BannerEntity{
 		Content:   dataFromBody.Content,
 		FeatureId: dataFromBody.FeatureId,
 		TagId:     dataFromBody.TagId,

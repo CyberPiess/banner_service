@@ -11,7 +11,7 @@ type Config struct {
 	LogFile  string
 }
 
-func NewLog(cfg Config) (*logrus.Logger, error) {
+func LoggerCreate(cfg Config) (*logrus.Logger, error) {
 
 	level, err := logrus.ParseLevel(cfg.LogLevel)
 	if err != nil {

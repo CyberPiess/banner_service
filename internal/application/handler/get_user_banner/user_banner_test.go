@@ -1,13 +1,15 @@
-package userbanner
+package user_banner
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	appBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/get_user_banner/mocks"
-	"github.com/CyberPiess/banner_sevice/internal/domain/banner"
+	appBanner "github.com/CyberPiess/banner_service/internal/application/handler/get_user_banner/mocks"
+	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,26 +24,31 @@ func TestGetUserBanner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockBannerService := appBanner.NewMockbannerService(ctrl)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "get_user_banner_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+	mockBannerService := appBanner.NewMockgetUserBannerService(ctrl)
 
-	bannerHandler := NewBannerHandler(mockBannerService)
+	bannerHandler := NewBannerHandler(mockBannerService, logger)
 
 	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
+		Return(bannerService.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
 			true, nil).Times(2)
 
 	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{},
+		Return(bannerService.BannerEntity{},
 			true,
 			nil)
 
 	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{},
+		Return(bannerService.BannerEntity{},
 			false,
 			nil)
 
 	mockBannerService.EXPECT().SearchBanner(gomock.Any(), gomock.Any()).
-		Return(banner.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
+		Return(bannerService.BannerEntity{Content: map[string]interface{}{"url": "some_url", "text": "some_text", "title": "some_title"}},
 			true,
 			fmt.Errorf("some error from db"))
 

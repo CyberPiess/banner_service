@@ -1,14 +1,16 @@
-package banner
+package banner_service
 
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
-	mock "github.com/CyberPiess/banner_sevice/internal/domain/banner/mocks"
-	"github.com/CyberPiess/banner_sevice/internal/infrastructure/postgres/banner"
-	redis "github.com/CyberPiess/banner_sevice/internal/infrastructure/redis/cache"
+	mock "github.com/CyberPiess/banner_service/internal/domain/banner/mocks"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
+	banner_storage "github.com/CyberPiess/banner_service/internal/infrastructure/postgres/banner"
+	redis "github.com/CyberPiess/banner_service/internal/infrastructure/redis/cache"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,12 +24,18 @@ func TestSearchBanner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
 	mockBannerStorage := mock.NewMockbannerStorage(ctrl)
 	mockBannerCache := mock.NewMockredisCache(ctrl)
 
-	bannerService := NewBannerService(mockBannerStorage, mockBannerCache)
+	bannerService := NewBannerService(mockBannerStorage, mockBannerCache, logger)
 
-	bannerSQL := []banner.BannerEntitySql{{
+	bannerSQL := []banner_storage.BannerEntitySql{{
 		Content: `{"some_string":"somestring"}`,
 	}}
 
@@ -39,7 +47,7 @@ func TestSearchBanner(t *testing.T) {
 	mockBannerStorage.EXPECT().Get(gomock.Any()).Return(bannerSQL, nil).Times(2)
 	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(nil)
 	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(fmt.Errorf("some error"))
-	mockBannerStorage.EXPECT().Get(gomock.Any()).Return([]banner.BannerEntitySql{}, fmt.Errorf("some error"))
+	mockBannerStorage.EXPECT().Get(gomock.Any()).Return([]banner_storage.BannerEntitySql{}, fmt.Errorf("some error"))
 	mockBannerStorage.EXPECT().IfBannerExists(gomock.Any(), gomock.Any()).Return(false, nil).Times(2)
 	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(nil)
 	mockBannerCache.EXPECT().AddToCache(gomock.Any(), gomock.Any()).Return(fmt.Errorf("redis_error"))
@@ -177,11 +185,17 @@ func TestSearchAllBanners(t *testing.T) {
 	mockBannerStorage := mock.NewMockbannerStorage(ctrl)
 	mockBannerCache := mock.NewMockredisCache(ctrl)
 
-	bannerService := NewBannerService(mockBannerStorage, mockBannerCache)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	bannerService := NewBannerService(mockBannerStorage, mockBannerCache, logger)
 	var timeToRet sql.NullTime
 	isActive := true
 
-	bannerSQL := []banner.BannerEntitySql{{
+	bannerSQL := []banner_storage.BannerEntitySql{{
 		ID:        1,
 		Content:   `{"some_string":"somestring"}`,
 		TagId:     []int{1, 2, 3},
@@ -192,7 +206,7 @@ func TestSearchAllBanners(t *testing.T) {
 
 	mockBannerStorage.EXPECT().IfAdminTokenValid(gomock.Any()).Return(true, nil).Times(2)
 	mockBannerStorage.EXPECT().GetAllBanners(gomock.Any()).Return(bannerSQL, nil)
-	mockBannerStorage.EXPECT().GetAllBanners(gomock.Any()).Return([]banner.BannerEntitySql{}, fmt.Errorf("some error"))
+	mockBannerStorage.EXPECT().GetAllBanners(gomock.Any()).Return([]banner_storage.BannerEntitySql{}, fmt.Errorf("some error"))
 	mockBannerStorage.EXPECT().IfAdminTokenValid(gomock.Any()).Return(false, nil)
 	mockBannerStorage.EXPECT().IfAdminTokenValid(gomock.Any()).Return(false, fmt.Errorf("some error"))
 
@@ -274,7 +288,13 @@ func TestPostBanner(t *testing.T) {
 	mockBannerStorage := mock.NewMockbannerStorage(ctrl)
 	mockBannerCache := mock.NewMockredisCache(ctrl)
 
-	bannerService := NewBannerService(mockBannerStorage, mockBannerCache)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	bannerService := NewBannerService(mockBannerStorage, mockBannerCache, logger)
 
 	mockBannerStorage.EXPECT().IfAdminTokenValid(gomock.Any()).Return(true, nil).Times(2)
 	mockBannerStorage.EXPECT().PostBanner(gomock.Any()).Return(1, nil)
@@ -374,7 +394,13 @@ func TestPutBanner(t *testing.T) {
 
 	isActive := true
 
-	bannerService := NewBannerService(mockBannerStorage, mockBannerCache)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	bannerService := NewBannerService(mockBannerStorage, mockBannerCache, logger)
 
 	mockBannerStorage.EXPECT().IfAdminTokenValid(gomock.Any()).Return(true, nil).Times(4)
 	mockBannerStorage.EXPECT().SearchBannerByID(gomock.Any()).Return(true, nil).Times(2)
@@ -505,7 +531,13 @@ func TestDeleteBanner(t *testing.T) {
 	mockBannerStorage := mock.NewMockbannerStorage(ctrl)
 	mockBannerCache := mock.NewMockredisCache(ctrl)
 
-	bannerService := NewBannerService(mockBannerStorage, mockBannerCache)
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "banner_storage_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	bannerService := NewBannerService(mockBannerStorage, mockBannerCache, logger)
 
 	mockBannerStorage.EXPECT().IfAdminTokenValid(gomock.Any()).Return(true, nil).Times(4)
 	mockBannerStorage.EXPECT().SearchBannerByID(gomock.Any()).Return(true, nil).Times(2)

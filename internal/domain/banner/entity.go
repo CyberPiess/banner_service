@@ -1,4 +1,4 @@
-package banner
+package banner_service
 
 import "time"
 

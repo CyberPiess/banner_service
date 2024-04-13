@@ -1,12 +1,14 @@
-package deletebanner
+package delete_banner
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	delBanner "github.com/CyberPiess/banner_sevice/internal/application/handler/delete_banner/mocks"
+	delBanner "github.com/CyberPiess/banner_service/internal/application/handler/delete_banner/mocks"
+	"github.com/CyberPiess/banner_service/internal/infrastructure/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +26,14 @@ func TestDeleteBanner(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockBannerService := delBanner.NewMockdeleteBannerService(ctrl)
-	delBannerHandler := NewDeleteBannerHandler(mockBannerService)
+
+	logger, err := logging.LoggerCreate(logging.Config{LogLevel: "info",
+		LogFile: "delete_banner_test.log"})
+	if err != nil {
+		log.Fatal("error init logger")
+	}
+
+	delBannerHandler := NewDeleteBannerHandler(mockBannerService, logger)
 
 	mockBannerService.EXPECT().DeleteBanner(gomock.Any(), gomock.Any()).Return(true, true, nil)
 	mockBannerService.EXPECT().DeleteBanner(gomock.Any(), gomock.Any()).Return(false, false, nil)

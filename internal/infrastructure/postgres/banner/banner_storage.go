@@ -1,19 +1,25 @@
 //go:generate mockgen -source=banner_storage.go -destination=mocks/mock.go
-package banner
+package banner_storage
 
 import (
 	"database/sql"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/sirupsen/logrus"
 )
 
-type BannerRepository struct {
-	db *sql.DB
+type logger interface {
+	WithFields(fields logrus.Fields) *logrus.Entry
 }
 
-func NewBannerRepository(db *sql.DB) *BannerRepository {
-	return &BannerRepository{db: db}
+type BannerRepository struct {
+	db     *sql.DB
+	logger logger
+}
+
+func NewBannerRepository(db *sql.DB, logger logger) *BannerRepository {
+	return &BannerRepository{db: db, logger: logger}
 }
 
 func (bn *BannerRepository) Get(bannerParams GetUserBannerCriteria) ([]BannerEntitySql, error) {
@@ -26,12 +32,22 @@ func (bn *BannerRepository) Get(bannerParams GetUserBannerCriteria) ([]BannerEnt
 		Join("tags as t on b.id = t.banner_id").Join("features as f on b.id = f.banner_id").
 		Where("feature_id = ? and tag_id = ? and is_active = true", bannerParams.FeatureId, bannerParams.TagId).ToSql()
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "Get",
+			"error":    err,
+		}).Error("Error creating select statement")
 		return []BannerEntitySql{}, err
 	}
 
 	row := bn.db.QueryRow(query, args...)
 	err = row.Scan(&banner.Content)
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "Get",
+			"error":    err,
+		}).Error("Error scanning row")
 		return []BannerEntitySql{}, err
 	}
 
@@ -60,6 +76,11 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 	bannersQuery, args, err = searchBannersID.ToSql()
 
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "GetAllBanners",
+			"error":    err,
+		}).Error("Error while creating select statement bannersQuery")
 		return []BannerEntitySql{}, err
 	}
 
@@ -67,6 +88,11 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 	var bannerIDSlice []int
 	foundID, err := bn.db.Query(bannersQuery, args...)
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "GetAllBanners",
+			"error":    err,
+		}).Error("Error while running query for foundID")
 		return []BannerEntitySql{}, err
 	}
 	defer foundID.Close()
@@ -92,10 +118,20 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 
 	fetchAllBannersQuery, args, err := selectAllBanners.ToSql()
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "GetAllBanners",
+			"error":    err,
+		}).Error("Error while creating select statement for fetchAllBannersQuery")
 		return []BannerEntitySql{}, err
 	}
 	bannerRows, err := bn.db.Query(fetchAllBannersQuery, args...)
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "GetAllBanners",
+			"error":    err,
+		}).Error("Error while running query for bannerRows")
 		return []BannerEntitySql{}, err
 	}
 	defer bannerRows.Close()
@@ -110,14 +146,29 @@ func (bn *BannerRepository) GetAllBanners(bannerParams GetBannersListCriteria) (
 			banner.UpdatedAt = updateTime.Time
 		}
 		if err != nil {
+			bn.logger.WithFields(logrus.Fields{
+				"package":  "banner_storage",
+				"function": "GetAllBanners",
+				"error":    err,
+			}).Error("Error while scanning bannerRows")
 			return []BannerEntitySql{}, err
 		}
 		selTags, args, err := psql.Select("tag_id").From("tags").Where("banner_id = ?", banner.ID).ToSql()
 		if err != nil {
+			bn.logger.WithFields(logrus.Fields{
+				"package":  "banner_storage",
+				"function": "GetAllBanners",
+				"error":    err,
+			}).Error("Error while creating select statement for selTags")
 			return []BannerEntitySql{}, err
 		}
 		tagsRows, err := bn.db.Query(selTags, args...)
 		if err != nil {
+			bn.logger.WithFields(logrus.Fields{
+				"package":  "banner_storage",
+				"function": "GetAllBanners",
+				"error":    err,
+			}).Error("Error while running query for tagsRow")
 			return []BannerEntitySql{}, err
 		}
 		defer tagsRows.Close()
@@ -139,11 +190,21 @@ func (bn *BannerRepository) PostBanner(postBannerParams BannerPutPostCriteria) (
 	tx, err := bn.db.Begin()
 
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "PostBanner",
+			"error":    err,
+		}).Error("Error while  beginning transaction")
 		return 0, err
 	}
 	defer func() {
 		if err != nil {
 			tx.Rollback()
+			bn.logger.WithFields(logrus.Fields{
+				"package":  "banner_storage",
+				"function": "PostBanner",
+				"error":    err,
+			}).Error("Error while inserting")
 			return
 		}
 		err = tx.Commit()
@@ -176,11 +237,21 @@ func (bn *BannerRepository) PutBanner(putBannerParams BannerPutPostCriteria) err
 	tx, err := bn.db.Begin()
 
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "PutBanner",
+			"error":    err,
+		}).Error("Error while beginning transaction")
 		return err
 	}
 	defer func() {
 		if err != nil {
 			tx.Rollback()
+			bn.logger.WithFields(logrus.Fields{
+				"package":  "banner_storage",
+				"function": "PutBanner",
+				"error":    err,
+			}).Error("Error while updating")
 			return
 		}
 		err = tx.Commit()
@@ -220,11 +291,21 @@ func (bn *BannerRepository) DeleteBanner(putBannerParams BannerPutPostCriteria) 
 	tx, err := bn.db.Begin()
 
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "DeleteBanner",
+			"error":    err,
+		}).Error("Error while beginning transaction")
 		return err
 	}
 	defer func() {
 		if err != nil {
 			tx.Rollback()
+			bn.logger.WithFields(logrus.Fields{
+				"package":  "banner_storage",
+				"function": "DeleteBanner",
+				"error":    err,
+			}).Error("Error while deleting")
 			return
 		}
 		err = tx.Commit()
@@ -250,6 +331,11 @@ func (bn *BannerRepository) IfTokenValid(token string) (bool, error) {
 		Prefix("SELECT EXISTS (").From("valid_tokens").
 		Where("token = ?", token).Suffix(")").ToSql()
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "IfTokenvalid",
+			"error":    err,
+		}).Error("Error while creating select statement")
 		return false, err
 	}
 	row := bn.db.QueryRow(query, args...)
@@ -267,6 +353,11 @@ func (bn *BannerRepository) IfAdminTokenValid(token string) (bool, error) {
 		Prefix("SELECT EXISTS (").From("valid_tokens").
 		Where("token = ? and permission_level = 'admin'", token).Suffix(")").ToSql()
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "IfAdminTokenValid",
+			"error":    err,
+		}).Error("Error while creating select statement")
 		return false, err
 	}
 
@@ -287,6 +378,11 @@ func (bn *BannerRepository) IfBannerExists(tagId int, featureId int) (bool, erro
 		Join("tags as t on b.id = t.banner_id").Join("features as f on b.id = f.banner_id").
 		Where("feature_id = ? and tag_id = ? and is_active = true", featureId, tagId).Suffix(")").ToSql()
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "IfBannerExists",
+			"error":    err,
+		}).Error("Error while creating select statement")
 		return false, err
 	}
 	row := bn.db.QueryRow(query, args...)
@@ -303,6 +399,11 @@ func (bn *BannerRepository) SearchBannerByID(bannerID int) (bool, error) {
 		From("banners as b").
 		Where("id = ?", bannerID).Suffix(")").ToSql()
 	if err != nil {
+		bn.logger.WithFields(logrus.Fields{
+			"package":  "banner_storage",
+			"function": "SearchBannerByID",
+			"error":    err,
+		}).Error("Error while creating select statement")
 		return false, err
 	}
 	row := bn.db.QueryRow(query, args...)
