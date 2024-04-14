@@ -10,10 +10,10 @@ git clone https://github.com/CyberPiess/banner_service
 ```
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
-PG_HOST=localhost
+PG_HOST= `pg_image_host` default: local_pgsql
 PG_PORT=5432
 SSLMODE=disable
-DBNAME=mydbname
+DBNAME=`db_name` default: banner_service
 REDIS_PASSWORD=somepassword
 REDIS_ADRESS=redis:6379
 ```
