@@ -19,7 +19,6 @@ REDIS_ADRESS=redis:6379
 ```
 ```bash
 # Сборка и запуск
-
 cd build
 docker-compose up
 ```
