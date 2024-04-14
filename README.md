@@ -2,11 +2,28 @@
 сервис для управления разнородным контентом
 
 ## Installation & Run
-```
+```bash
+# Скачать этот проект
 git clone github.com/CyberPiess/banner_service
-
-
 ```
+Перед запуском API сервера необходимо настроить переменные окружения. Для этого нужно создать файл .env по аналогии с файлом /build/.env.local 
+```
+POSTGRES_USER=myuser
+POSTGRES_PASSWORD=mypassword
+PG_HOST=localhost
+PG_PORT=5432
+SSLMODE=disable
+DBNAME=mydbname
+REDIS_PASSWORD=somepassword
+REDIS_ADRESS=redis:6379
+```
+```bash
+# Сборка и запуск
+
+cd build
+docker-compose up
+```
+
 ## API
 
 #### /api/user_banner?tag_id=1&feature_id=1
@@ -51,11 +68,4 @@ git clone github.com/CyberPiess/banner_service
       - `id` (path, required): идентификатор баннера
       - `token` (header, required): токен админа
     - *Description*:  Удаление баннера по идентификатору
-
-
-
-
-
-
-
 
