@@ -21,9 +21,37 @@
 						"type": "text"
 					}
 				],
-				"url": "http://localhost:8080/banner/4"
+				"url": "http://localhost:8080/banner/{id}"
 			},
-			"response": []
+			"response": [
+				{
+					"id": "fbf1c962-1202-46a8-ae63-eb94e0557288",
+					"name": "delete_banner",
+					"originalRequest": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "token",
+								"value": "admin_token",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8080/banner/4"
+					},
+					"status": "No Content",
+					"code": 204,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 14 Apr 2024 07:03:19 GMT"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": null
+				}
+			]
 		},
 		{
 			"name": "create_banner",
@@ -42,7 +70,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 17,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
+					"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 16,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -51,7 +79,52 @@
 				},
 				"url": "http://localhost:8080/banner"
 			},
-			"response": []
+			"response": [
+				{
+					"id": "4202774c-6c35-4057-8bb6-7c012bd1a8dc",
+					"name": "create_banner",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "admin_token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 17,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://localhost:8080/banner"
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 14 Apr 2024 07:02:31 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "15"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"banner_id\": 4\n}"
+				}
+			]
 		},
 		{
 			"name": "update_banner",
@@ -70,7 +143,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"is_active\": false,\r\n    \"feature_id\": 12\r\n}",
+					"raw": "{\r\n    \"is_active\": false,\r\n    \"feature_id\": 13\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -78,7 +151,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/banner/4",
+					"raw": "http://localhost:8080/banner/{id}",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -86,7 +159,7 @@
 					"port": "8080",
 					"path": [
 						"banner",
-						"4"
+						"{id}"
 					],
 					"query": [
 						{
@@ -98,7 +171,67 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"id": "81e297c2-f79d-4cb3-b333-ea7cd491fa4c",
+					"name": "update_banner",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "token",
+								"value": "admin_token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"is_active\": false,\r\n    \"feature_id\": 12\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/banner/4",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"banner",
+								"4"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 14 Apr 2024 07:03:10 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "0"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": null
+				}
+			]
 		},
 		{
 			"name": "banner",
@@ -148,7 +281,74 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"id": "64174607-e26a-497f-b3b1-90de27ad2111",
+					"name": "banner",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "admin_token",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/banner?tag_id=1&limit=2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"banner"
+							],
+							"query": [
+								{
+									"key": "tag_id",
+									"value": "1"
+								},
+								{
+									"key": "feature_id",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "2"
+								},
+								{
+									"key": "offset",
+									"value": "1",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 14 Apr 2024 07:02:01 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "416"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "[\n    {\n        \"banner_id\": 1,\n        \"tag_ids\": [\n            1,\n            2,\n            3\n        ],\n        \"feature_id\": 1,\n        \"content\": {\n            \"text\": \"some_text\",\n            \"title\": \"some_title\",\n            \"url\": \"some_url\"\n        },\n        \"is_active\": true,\n        \"created_at\": \"0001-01-01T00:00:00Z\",\n        \"updated_at\": \"0001-01-01T00:00:00Z\"\n    },\n    {\n        \"banner_id\": 3,\n        \"tag_ids\": [\n            1,\n            2,\n            3\n        ],\n        \"feature_id\": 2,\n        \"content\": {\n            \"text\": \"some_text\",\n            \"title\": \"some_title\",\n            \"url\": \"some_url\"\n        },\n        \"is_active\": false,\n        \"created_at\": \"0001-01-01T00:00:00Z\",\n        \"updated_at\": \"0001-01-01T00:00:00Z\"\n    }\n]"
+				}
+			]
 		},
 		{
 			"name": "user_banner",
@@ -187,7 +387,63 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"id": "386f8b2a-5533-45c4-b561-87e72aac74ab",
+					"name": "user_banner",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "user_token",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/user_banner?tag_id=1&feature_id=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"user_banner"
+							],
+							"query": [
+								{
+									"key": "tag_id",
+									"value": "1"
+								},
+								{
+									"key": "feature_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 14 Apr 2024 07:07:56 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "58"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"text\": \"some_text\",\n    \"title\": \"some_title\",\n    \"url\": \"some_url\"\n}"
+				}
+			]
 		}
 	],
 	"event": [
