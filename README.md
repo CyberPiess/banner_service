@@ -10,7 +10,7 @@ git clone https://github.com/CyberPiess/banner_service
 ```.env
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
-PG_HOST= `pg_image_host` default: local_pgsql
+PG_HOST= `pg_image_host` #должен соответствовать имени контейнера с postgres
 PG_PORT=5432
 SSLMODE=disable
 DBNAME=`db_name` default: banner_service
