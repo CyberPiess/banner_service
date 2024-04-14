@@ -69,4 +69,4 @@ docker-compose up
     - *Description*:  Удаление баннера по идентификатору
 
   ----
-Примеры запросов и ответов находятся в директории Postman Collections, файл banner_service_http_requests.json
+Примеры запросов и ответов находятся в директории postman_collections, файл banner_service_http_requests.json
