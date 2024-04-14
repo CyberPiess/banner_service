@@ -68,3 +68,4 @@ docker-compose up
       - `token` (header, required): токен админа
     - *Description*:  Удаление баннера по идентификатору
 
+Примеры запросов и ответов находятся в директории Postman Collections, файл banner_service_http_requests.json
