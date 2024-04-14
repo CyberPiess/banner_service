@@ -2,7 +2,11 @@
 сервис для управления разнородным контентом
 
 ## Installation & Run
+```
+git clone github.com/CyberPiess/banner_service
 
+
+```
 ## API
 
 #### /api/user_banner?tag_id=1&feature_id=1
