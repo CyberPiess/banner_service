@@ -1,3 +1,0 @@
-{"function":"Get","level":"info","mesage":"Test logger","msg":"No errors","package":"banner_storage","time":"2024-04-13T14:14:10+03:00"}
-time="2024-04-14T02:36:31+03:00" level=fatal msg="failed to initialize db: dial tcp: lookup db: no such host"
-time="2024-04-14T02:36:51+03:00" level=fatal msg="failed to initialize db: dial tcp: lookup db: no such host"

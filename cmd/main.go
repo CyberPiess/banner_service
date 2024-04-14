@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	getBannerList "github.com/CyberPiess/banner_service/internal/application/handler/get_banner_list"
 	getUserBanner "github.com/CyberPiess/banner_service/internal/application/handler/get_user_banner"
 	updateBanner "github.com/CyberPiess/banner_service/internal/application/handler/update_banner"
+	"github.com/sirupsen/logrus"
 
 	bannerService "github.com/CyberPiess/banner_service/internal/domain/banner"
 	"github.com/gorilla/mux"
@@ -32,8 +34,16 @@ func main() {
 	if err != nil {
 		log.Fatal("Error starting log")
 	}
+	dir, err := os.Getwd()
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"package":  "main",
+			"function": "main",
+			"error":    err,
+		}).Error()
+	}
 
-	err = godotenv.Load()
+	err = godotenv.Load(fmt.Sprintf("%s/build/.env", dir))
 	if err != nil {
 		logger.Fatal("Error loading .env file")
 	}
