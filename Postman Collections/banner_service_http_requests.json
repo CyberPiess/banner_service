@@ -61,7 +61,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8080/banner",
+					"raw": "http://localhost:8080/banner?tag_id=1&limit=2",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -73,8 +73,7 @@
 					"query": [
 						{
 							"key": "tag_id",
-							"value": "1",
-							"disabled": true
+							"value": "1"
 						},
 						{
 							"key": "feature_id",
@@ -83,9 +82,8 @@
 						},
 						{
 							"key": "limit",
-							"value": "1",
-							"type": "text",
-							"disabled": true
+							"value": "2",
+							"type": "text"
 						},
 						{
 							"key": "offset",
@@ -115,7 +113,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 14,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
+					"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 17,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -143,7 +141,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"is_active\": false\r\n}",
+					"raw": "{\r\n    \"is_active\": false,\r\n    \"feature_id\": 12\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -151,7 +149,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/banner/{id}",
+					"raw": "http://localhost:8080/banner/4",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -159,7 +157,7 @@
 					"port": "8080",
 					"path": [
 						"banner",
-						"{id}"
+						"4"
 					],
 					"query": [
 						{
@@ -188,7 +186,7 @@
 						"type": "text"
 					}
 				],
-				"url": "http://localhost:8080/banner/{id}"
+				"url": "http://localhost:8080/banner/4"
 			},
 			"response": []
 		}
