@@ -7,7 +7,7 @@
 git clone https://github.com/CyberPiess/banner_service
 ```
 Перед запуском API сервера необходимо настроить переменные окружения. Для этого нужно создать файл .env по аналогии с файлом /build/.env.local 
-```
+```.env
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
 PG_HOST= `pg_image_host` default: local_pgsql
