@@ -4,7 +4,7 @@
 ## Installation & Run
 ```bash
 # Скачать проект
-git clone github.com/CyberPiess/banner_service
+git clone https://github.com/CyberPiess/banner_service
 ```
 Перед запуском API сервера необходимо настроить переменные окружения. Для этого нужно создать файл .env по аналогии с файлом /build/.env.local 
 ```
