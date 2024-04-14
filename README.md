@@ -19,7 +19,7 @@ REDIS_ADRESS=redis:6379
 ```
 ```bash
 # Компиляция и запуск
-cd build
+cd banner_service/build
 docker-compose up
 ```
 
