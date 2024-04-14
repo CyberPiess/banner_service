@@ -38,7 +38,7 @@ func SetupTestDatabase() *TestDatabase {
 		log.Fatal("failed to setup test", err)
 	}
 
-	err = migrateDb(dbAddr)
+	err = testMigrateDb(dbAddr)
 	if err != nil {
 		log.Fatal("failed to perform db migration", err)
 	}
@@ -106,7 +106,7 @@ func createContainer(ctx context.Context) (testcontainers.Container, *sql.DB, st
 	return container, db, dbAddr, nil
 }
 
-func migrateDb(dbAddr string) error {
+func testMigrateDb(dbAddr string) error {
 
 	_, path, _, ok := runtime.Caller(0)
 	if !ok {

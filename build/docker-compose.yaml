@@ -2,7 +2,7 @@ version: "3.8"
 name: banner_service
 services:
   db:
-    image: postgres
+    image: postgres:latest
     container_name: local_pgsql
     restart: always
     ports:
@@ -11,18 +11,38 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     env_file:
-      - ../.env
+      - .env
     volumes:
       - local_pgdata:/var/lib/postgres/data
 
   cache:
-    image: redis:6.2-alpine
+    image: redis:6.2
     restart: always
+    env_file:
+      - .env
     ports:
       - '6379:6379'
     command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
     volumes: 
       - cache:/data
+  
+  banner_s:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_ADDRESS: cache:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - cache
 
 volumes:
   local_pgdata:
