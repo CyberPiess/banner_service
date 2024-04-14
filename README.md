@@ -6,7 +6,7 @@
 # Скачать проект
 git clone https://github.com/CyberPiess/banner_service
 ```
-Перед запуском API сервера необходимо настроить переменные окружения. Для этого нужно создать файл .env по аналогии с файлом /build/.env.local 
+Перед запуском API сервера необходимо настроить переменные окружения. Для этого нужно создать файл .env в директории /build по аналогии с файлом .env.local 
 ```.env
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
@@ -17,10 +17,18 @@ DBNAME=`db_name` default: banner_service
 REDIS_PASSWORD=somepassword
 REDIS_ADRESS=redis:6379
 ```
+Компиляция и запуск осуществляются при помощи Makefile
+
+* make выполняет запуск контейнера с postgres, создание базы данных, миграцию таблиц, запуск контейнера Redis, сборку и запуск API
+- make install отвечает за установку библиотеки для осуществления миграций
+- make dropdb удаляет базу данных
+- make migratedown откатывает изменения внесенные миграцией
+
 ```bash
 # Компиляция и запуск
-cd banner_service/build
-docker-compose up
+cd banner_service
+make install # если нет библиотеки для осуществления миграций
+make
 ```
 
 ## API
