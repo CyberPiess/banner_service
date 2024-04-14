@@ -3,7 +3,7 @@
 
 ## Installation & Run
 ```bash
-# Скачать этот проект
+# Скачать проект
 git clone github.com/CyberPiess/banner_service
 ```
 Перед запуском API сервера необходимо настроить переменные окружения. Для этого нужно создать файл .env по аналогии с файлом /build/.env.local 
@@ -18,7 +18,7 @@ REDIS_PASSWORD=somepassword
 REDIS_ADRESS=redis:6379
 ```
 ```bash
-# Сборка и запуск
+# Компиляция и запуск
 cd build
 docker-compose up
 ```
