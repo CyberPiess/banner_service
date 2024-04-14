@@ -7,52 +7,13 @@
 	},
 	"item": [
 		{
-			"name": "user_banner",
-			"id": "f14c5cc6-c930-404b-b868-1540d4497310",
+			"name": "delete_banner",
+			"id": "e04a8dea-6300-4533-aab8-96e276441d52",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
 			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "token",
-						"value": "user_token",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "http://localhost:8080/user_banner?tag_id=1&feature_id=1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"user_banner"
-					],
-					"query": [
-						{
-							"key": "tag_id",
-							"value": "1"
-						},
-						{
-							"key": "feature_id",
-							"value": "1"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "banner",
-			"id": "b42401bd-a53f-4e8f-b15a-4a48b328b326",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
+				"method": "DELETE",
 				"header": [
 					{
 						"key": "token",
@@ -60,45 +21,41 @@
 						"type": "text"
 					}
 				],
-				"url": {
-					"raw": "http://localhost:8080/banner?tag_id=1&limit=2",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"banner"
-					],
-					"query": [
-						{
-							"key": "tag_id",
-							"value": "1"
-						},
-						{
-							"key": "feature_id",
-							"value": "1",
-							"disabled": true
-						},
-						{
-							"key": "limit",
-							"value": "2",
-							"type": "text"
-						},
-						{
-							"key": "offset",
-							"value": "1",
-							"type": "text",
-							"disabled": true
+				"url": "http://localhost:8080/banner/4"
+			},
+			"response": []
+		},
+		{
+			"name": "create_banner",
+			"id": "de26bc01-8e00-48c8-a8b7-13f66cafc62e",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "admin_token",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 17,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					]
-				}
+					}
+				},
+				"url": "http://localhost:8080/banner"
 			},
 			"response": []
 		},
 		{
 			"name": "update_banner",
-			"id": "e957e5df-6425-473d-bf90-bebfdc8e13e9",
+			"id": "72d0cf5d-3514-4bd4-b710-7150ca413b56",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -144,13 +101,13 @@
 			"response": []
 		},
 		{
-			"name": "delete_banner",
-			"id": "e04a8dea-6300-4533-aab8-96e276441d52",
+			"name": "banner",
+			"id": "51ce9666-129b-4a50-a41d-c53c8c505c50",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
 			"request": {
-				"method": "DELETE",
+				"method": "GET",
 				"header": [
 					{
 						"key": "token",
@@ -158,35 +115,77 @@
 						"type": "text"
 					}
 				],
-				"url": "http://localhost:8080/banner/4"
+				"url": {
+					"raw": "http://localhost:8080/banner?tag_id=1&limit=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"banner"
+					],
+					"query": [
+						{
+							"key": "tag_id",
+							"value": "1"
+						},
+						{
+							"key": "feature_id",
+							"value": "1",
+							"disabled": true
+						},
+						{
+							"key": "limit",
+							"value": "2"
+						},
+						{
+							"key": "offset",
+							"value": "1",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "create_banner",
-			"id": "de26bc01-8e00-48c8-a8b7-13f66cafc62e",
+			"name": "user_banner",
+			"id": "0a1bb80c-e935-421e-ac59-da2425379586",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
 			"request": {
-				"method": "POST",
+				"method": "GET",
 				"header": [
 					{
 						"key": "token",
-						"value": "admin_token",
+						"value": "user_token",
 						"type": "text"
 					}
 				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"tag_ids\": [15, 17, 25],\r\n    \"feature_id\": 17,\r\n    \"is_active\": true,\r\n    \"content\": {\"name\": \"some name here\", \"info\": \"some info\"}\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+				"url": {
+					"raw": "http://localhost:8080/user_banner?tag_id=1&feature_id=1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"user_banner"
+					],
+					"query": [
+						{
+							"key": "tag_id",
+							"value": "1"
+						},
+						{
+							"key": "feature_id",
+							"value": "1"
 						}
-					}
-				},
-				"url": "http://localhost:8080/banner"
+					]
+				}
 			},
 			"response": []
 		}
